@@ -37,8 +37,14 @@ namespace NetworkGUI
             progressBar.Maximum = end;
             progressBar.Value = cur >= start && cur <= end ? cur : start;
 
-            if (cur == end)
-                this.Close();
+            //Yushan
+            if (start == end && start == 0)
+                this.Hide();
+            else
+            {
+                if (cur == end)
+                    this.Close();
+            }
         }
 
 

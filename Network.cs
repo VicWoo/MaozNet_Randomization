@@ -745,9 +745,12 @@ namespace Network
                 }
                 else
                 {
-                    tempDataMatrix = mTable["Data"];
-                    mTable = new MatrixTable();
-                    mTable["Data"] = new Matrix(tempDataMatrix);
+                    if (mTable["Data"] != null)
+                    {
+                        tempDataMatrix = mTable["Data"];
+                        mTable = new MatrixTable();
+                        mTable["Data"] = new Matrix(tempDataMatrix);
+                    }
                     if (loadFrom == "Affil")
                     {
                         if (tempAffilMatrix != null)
@@ -769,6 +772,10 @@ namespace Network
             {
                 // do nothing
             }
+            //else if (m == "GlobalRandom")
+            //{
+
+            //}
             else
             {
                 Matrix tempMatrix = new Matrix(mTable["Data"]);
@@ -14206,175 +14213,189 @@ namespace Network
 
         // Yushan 
         // Global Randomization
-
-        public void LoadGlobalRandom(DataGridView data, Dictionary<string, List<Matrix>> mRandTable, int numRand, string m, bool directed, bool sign, bool selfties, List<Dictionary<String, int>> networkSpec)
+        public List<Matrix> ListGlobalRandom(Dictionary<string, List<Matrix>> mRandTable, int numRand, string m, bool sign, List<Dictionary<String, int>> networkSpec)
         {
-
-            // Generate global randomization
-            if (directed)
-            {
-                
-                mRandTable = RandomMatrix.LoadGlobalRandom(numRand, directed, sign, selfties, networkSpec);
-            }
-            else
-            {
-                mRandTable = RandomMatrix.LoadGlobalRandom(numRand, directed, sign, selfties, networkSpec);
-            }
-
             // Load into mTable 
             int numNet = mRandTable.Count;
-            int[] nodes = new int[numNet];
+            int nodes;
+            string netLabel;
             int i = 0;
             int numCells = 0;
-            Matrix output = null;
+            List<Matrix>  mRandList = new List<Matrix>();
+            Matrix tempMatrix = null;
 
             foreach (KeyValuePair<string, List<Matrix>> kvp in mRandTable)
             {
-                nodes[i] = mRandTable[kvp.Key][0].Cols;
-                numCells += nodes[i] * nodes[i];
-                // Console.WriteLine("Nodes: " + nodes[i].ToString());
+                nodes = mRandTable[kvp.Key][0].Cols;
+                netLabel = kvp.Key;
                 i++;
-            }
 
-            
-
-
-            data.Columns.Clear();
-            output = mTable.AddMatrix(m, numCells, 3 + numRand);
-            output.ColLabels[0] = "Network ID";
-            output.ColLabels[1] = "i";
-            output.ColLabels[2] = "j";
-            for (i = 0; i < numRand; i++)
-            {
-                output.ColLabels[3 + i] = "Rand_" + (i + 1).ToString();
-            }
-
-            int count = 0;
-            int dummy = 0;
-            int j = 0;
-            foreach (KeyValuePair<string, List<Matrix>> kvp in mRandTable)
-            {
-                int netID = int.Parse(kvp.Key);
-                List<Matrix> mlist = kvp.Value;
-                // Console.WriteLine("network ID: " + netID.ToString());
-                for (i = 0; i < nodes[count]; i++)
+                numCells = nodes * nodes;
+                if (sign)
                 {
-                    for (j = 0; j < nodes[count]; j++)
+                    tempMatrix = new Matrix(numCells, 3 + 2 * numRand);
+                }
+                else { tempMatrix = new Matrix(numCells, 3 + numRand); }
+
+                tempMatrix.ColLabels[0] = "Network ID";
+                tempMatrix.ColLabels[1] = "i";
+                tempMatrix.ColLabels[2] = "j";
+                for (i = 0; i < numRand; i++)
+                {
+                    if (sign)
                     {
-                        output[dummy, 0] = netID;
-                        output[dummy, 1] = i + 1; // Output row and col index start at "1" instead of "0"
-                        output[dummy, 2] = j + 1;
+                        tempMatrix.ColLabels[3 + 2 * i] = "Rand_pos_" + (i + 1).ToString();
+                        tempMatrix.ColLabels[3 + 2 * i + 1] = "Rand_neg_" + (i + 1).ToString();
+                    }
+                    else { tempMatrix.ColLabels[3 + i] = "Rand_" + (i + 1).ToString(); }
+                }
+
+                int dummy = 0;
+                int j = 0;
+                // foreach (KeyValuePair<string, List<Matrix>> kvp in mRandTable)
+                // {
+
+                // int netID = int.Parse(kvp.Key);
+                // List<Matrix> mlist = kvp.Value;
+                // Console.WriteLine("network ID: " + netID.ToString());
+                int netID = int.Parse(netLabel);
+                List<Matrix> mlist = mRandTable[netLabel];
+                for (i = 0; i < nodes; i++)
+                {
+                    for (j = 0; j < nodes; j++)
+                    {
+                        tempMatrix[dummy, 0] = int.Parse(netLabel);
+                        tempMatrix[dummy, 1] = i + 1; // tempMatrix row and col index start at "1" instead of "0"
+                        tempMatrix[dummy, 2] = j + 1;
                         for (int k = 0; k < numRand; k++)
                         {
-                            output[dummy, 3 + k] = mlist[k][i, j];
+                            if (sign)
+                            {
+                                if (mlist[k][i, j] >= 0)
+                                {
+                                    tempMatrix[dummy, 3 + 2 * k] = mlist[k][i, j];
+                                    tempMatrix[dummy, 3 + 2 * k + 1] = 0;
+                                }
+                                else
+                                {
+                                    tempMatrix[dummy, 3 + 2 * k] = 0;
+                                    tempMatrix[dummy, 3 + 2 * k + 1] = mlist[k][i, j];
+                                }
+                            }
+                            else { tempMatrix[dummy, 3 + k] = mlist[k][i, j]; }
                         }
                         dummy++;
                     }
                 }
-                count++;
+                mRandList.Add(tempMatrix);
             }
+            return mRandList;
+        }
 
-            mTable["Data"] = new Matrix(output);
-            //displaying Grid
-            //columns
-            for (i = 0; i < output.ColLabels.Length; i++)
-                data.Columns.Add(output.ColLabels[i], output.ColLabels[i]);
 
-            //rows
-            for (i = 0; i < output.Rows; i++)
+        public void LoadGlobalRandom(List<Matrix> mRandList, string m, int netIndex)
+        {
+            if (netIndex > (mRandList.Count - 1))
             {
-                string[] dataRow = new string[output.Cols];
-                for (j = 0; j < output.Cols; j++)
-                {
-
-                    dataRow[j] = output[i, j].ToString();
-                }
-                data.Rows.Add(dataRow);
+                throw new Exception("The index is out of range!");
             }
+            // Load into mTable 
+            mTable[m] = new Matrix(mRandList[netIndex]);           
         }
         //
         // Yushan
         // Configuration Models
 
-        // public void LoadConfigModel( )
-        public void LoadConfigModel(DataGridView data, Dictionary<string, List<Matrix>> mRandTable, int numRand, string m, bool directed, bool sign, bool selfties, MatrixTable networkSpec_data)
+        public List<Matrix> ListConfigModel(Dictionary<string, List<Matrix>> mRandTable, int numRand, string m, bool directed, bool sign, MatrixTable networkSpec_data)
         {
-
-            // Generate global randomization
-            mRandTable = RandomMatrix.LoadConfigModel(numRand, directed, sign, selfties, networkSpec_data);
 
             // Load into mTable 
             int numNet = mRandTable.Count;
-            int[] nodes = new int[numNet];
+            int nodes;
+            string netLabel;
             int i = 0;
             int numCells = 0;
-            Matrix output = null;
+            List<Matrix> mRandList = new List<Matrix>();
+            Matrix tempMatrix = null;
 
             foreach (KeyValuePair<string, List<Matrix>> kvp in mRandTable)
             {
-                nodes[i] = mRandTable[kvp.Key][0].Cols;
-                numCells += nodes[i] * nodes[i];
-                // Console.WriteLine("Nodes: " + nodes[i].ToString());
+                nodes = mRandTable[kvp.Key][0].Cols;
+                netLabel = kvp.Key;
                 i++;
-            }
 
-
-
-
-            data.Columns.Clear();
-            output = mTable.AddMatrix(m, numCells, 3 + numRand);
-            output.ColLabels[0] = "Network ID";
-            output.ColLabels[1] = "i";
-            output.ColLabels[2] = "j";
-            for (i = 0; i < numRand; i++)
-            {
-                output.ColLabels[3 + i] = "Rand_" + (i + 1).ToString();
-            }
-
-            int count = 0;
-            int dummy = 0;
-            int j = 0;
-            foreach (KeyValuePair<string, List<Matrix>> kvp in mRandTable)
-            {
-                int netID = int.Parse(kvp.Key);
-                List<Matrix> mlist = kvp.Value;
-                // Console.WriteLine("network ID: " + netID.ToString());
-                for (i = 0; i < nodes[count]; i++)
+                numCells = nodes * nodes;
+                if (sign)
                 {
-                    for (j = 0; j < nodes[count]; j++)
+                    tempMatrix = new Matrix(numCells, 3 + 2 * numRand);
+                }
+                else { tempMatrix = new Matrix(numCells, 3 + numRand); }
+
+                tempMatrix.ColLabels[0] = "Network ID";
+                tempMatrix.ColLabels[1] = "i";
+                tempMatrix.ColLabels[2] = "j";
+                for (i = 0; i < numRand; i++)
+                {
+                    if (sign)
                     {
-                        output[dummy, 0] = netID;
-                        output[dummy, 1] = i + 1; // Output row and col index start at "1" instead of "0"
-                        output[dummy, 2] = j + 1;
+                        tempMatrix.ColLabels[3 + 2 * i] = "Rand_pos_" + (i + 1).ToString();
+                        tempMatrix.ColLabels[3 + 2 * i + 1] = "Rand_neg_" + (i + 1).ToString();
+                    }
+                    else { tempMatrix.ColLabels[3 + i] = "Rand_" + (i + 1).ToString(); }
+                }
+
+                int dummy = 0;
+                int j = 0;
+                // foreach (KeyValuePair<string, List<Matrix>> kvp in mRandTable)
+                // {
+
+                // int netID = int.Parse(kvp.Key);
+                // List<Matrix> mlist = kvp.Value;
+                // Console.WriteLine("network ID: " + netID.ToString());
+                int netID = int.Parse(netLabel);
+                List<Matrix> mlist = mRandTable[netLabel];
+                for (i = 0; i < nodes; i++)
+                {
+                    for (j = 0; j < nodes; j++)
+                    {
+                        tempMatrix[dummy, 0] = int.Parse(netLabel);
+                        tempMatrix[dummy, 1] = i + 1; // tempMatrix row and col index start at "1" instead of "0"
+                        tempMatrix[dummy, 2] = j + 1;
                         for (int k = 0; k < numRand; k++)
                         {
-                            output[dummy, 3 + k] = mlist[k][i, j];
+                            if (sign)
+                            {
+                                if (mlist[k][i, j] >= 0)
+                                {
+                                    tempMatrix[dummy, 3 + 2 * k] = mlist[k][i, j];
+                                    tempMatrix[dummy, 3 + 2 * k + 1] = 0;
+                                }
+                                else
+                                {
+                                    tempMatrix[dummy, 3 + 2 * k] = 0;
+                                    tempMatrix[dummy, 3 + 2 * k + 1] = mlist[k][i, j];
+                                }
+                            }
+                            else { tempMatrix[dummy, 3 + k] = mlist[k][i, j]; }
                         }
                         dummy++;
                     }
                 }
-                count++;
+                mRandList.Add(tempMatrix);
             }
-
-            mTable["Data"] = new Matrix(output);
-            //displaying Grid
-            //columns
-            for (i = 0; i < output.ColLabels.Length; i++)
-                data.Columns.Add(output.ColLabels[i], output.ColLabels[i]);
-
-            //rows
-            for (i = 0; i < output.Rows; i++)
-            {
-                string[] dataRow = new string[output.Cols];
-                for (j = 0; j < output.Cols; j++)
-                {
-
-                    dataRow[j] = output[i, j].ToString();
-                }
-                data.Rows.Add(dataRow);
-            }
+            return mRandList;
         }
 
+        public void LoadConfigModel(List<Matrix> mRandList, string m, int netIndex)
+        {
+            // Check if the netIndex is within the range
+            if (netIndex > (mRandList.Count - 1))
+            {
+                throw new Exception("The index is out of range!");
+            }
+            // Load into mTable 
+            mTable[m] = new Matrix(mRandList[netIndex]);
+        }
         // 
     }
 }

@@ -306,96 +306,122 @@ namespace Network.Matrices
         public static Matrix GenerateGlobal(bool directed, bool sign, bool selfties, int nodes, int edges, int vmax)
         {
             Matrix m = new Matrix(nodes);
+            m.Clear();
             Algorithms.Iota(m.ColLabels, 1);
             Algorithms.Iota(m.RowLabels, 1);
-            // m.Clear();
+            Console.WriteLine("Edges: " + edges.ToString());
+            int draw;
+            int _row;
+            int _col;
+            List<int> pool = new List<int>();
+
+            int count = 0;
             for (int i = 0; i < nodes; i++)
             {
                 for (int j = 0; j < nodes; j++)
                 {
-                    m[i, j] = 0;
+                    pool.Add(count++);
                 }
             }
-            // Console.WriteLine("Print: " + edges.ToString());
-
+            if(!selfties)
+            {
+                for (int i = 0; i < nodes; i++)
+                {
+                    pool.Remove(i * nodes + i);
+                }
+            }
 
             if (directed)
             {
-                int count = 0;              
-                int rand_row;
-                int rand_col;
-
-
-                while (count < edges)
+                while (edges > 0)
                 {
-                    int counter = 0;
-                    while (true)
+                    if (pool.Count > 0)
                     {
-                        rand_row = RNG.RandomInt(nodes-1);
-                        rand_col = RNG.RandomInt(nodes-1);
-                        if (m[rand_row, rand_col] == 0 && selfties)
-                        {
-                            m[rand_row, rand_col] = (int)RNG.RandomInt(1, vmax); // Inclusive upper bound
-                            count++;
-                            break;
-                        }
-                        else if (m[rand_row, rand_col] == 0 && !selfties)
-                        {
-                            if (!(rand_row == rand_col))
-                            {
-                                m[rand_row, rand_col] = (int)RNG.RandomInt(1, vmax); // Inclusive upper bound
-                                count++;
-                                break;
-                            }
-                        }
-                        counter++;
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
+
+                        m[_row, _col] = (int)RNG.RandomInt(1, vmax); // Inclusive upper bound
+                        edges--;
+                        pool.Remove(draw);
                     }
-                    // Console.WriteLine("Count: " + count.ToString());
-
+                    else
+                    {
+                        throw new Exception("Falied to find a valid randomization of edges.");
+                    }
                 }
-            }
 
+            }
             else
             {
-                int count = 0;
-                int rand_row;
-                int rand_col;
-
-
-                while (count < edges)
+                if (!selfties)
                 {
-                    while (true)
+                    if (edges % 2 != 0)
+                        throw new Exception("Input postive edges and negative edges are not both even!");
+                }
+
+                while (edges > 0)
+                {
+                    bool found = false;
+                    while (pool.Count > 0)
                     {
-                        rand_row = RNG.RandomInt(nodes - 1);
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
                         if (selfties)
                         {
-                            rand_col = (int)RNG.RandomInt(rand_row, nodes - 1);
-                            if (m[rand_row, rand_col] == 0)
+                            if (_row != _col && pool.Count > 1)
                             {
-                                m[rand_row, rand_col] = (int)RNG.RandomInt(1, vmax);
-                                m[rand_col, rand_row] = m[rand_row, rand_col];
-                                count++;
+                                m[_row, _col] = (int)RNG.RandomInt(1, vmax);
+                                m[_col, _row] = m[_row, _col];
+                                edges--;
+                                edges--;
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
+                                found = true;
                                 break;
                             }
-                        }
-                        else 
-                        {
-                            if (rand_row < nodes - 1)
+                            else if (_row == _col)
                             {
-                                rand_col = (int)RNG.RandomInt(rand_row + 1, nodes - 1);
-                                if (m[rand_row, rand_col] == 0)
-                                {
-                                    m[rand_row, rand_col] = (int)RNG.RandomInt(1, vmax);
-                                    m[rand_col, rand_row] = m[rand_row, rand_col];
-                                    count++;
-                                    break;
-                                }
+                                m[_row, _col] = (int)RNG.RandomInt(1, vmax);
+                                edges--;
+                                pool.Remove(draw);
+                                found = true;
+                                break;
+                            }
+                            else
+                            {
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
                             }
                         }
+                        else
+                        {
+                            if (pool.Count > 1)
+                            {
+                                m[_row, _col] = (int)RNG.RandomInt(1, vmax);
+                                m[_col, _row] = m[_row, _col];
+                                edges--;
+                                edges--;
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
+                                found = true;
+                                break;
+                            }
+                            else
+                            {
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
+                            }
+                        }
+
+                    }
+                    if (found == false)
+                    {
+                        throw new Exception("Failed to find a valid randomization of edges.");
                     }
                 }
             }
-
             return m;
         }
 
@@ -403,149 +429,241 @@ namespace Network.Matrices
         public static Matrix GenerateGlobal(bool directed, bool sign, bool selfties, int nodes, int posedges, int negedges, int vmin, int vmax)
         {
             Matrix m = new Matrix(nodes);
-            // m.Clear();
+            m.Clear();
+            Algorithms.Iota(m.ColLabels, 1);
+            Algorithms.Iota(m.RowLabels, 1);
+            // Console.WriteLine("Posedges: " + posedges.ToString() + " Negedges: " + negedges.ToString);
+            int draw;
+            int _row;
+            int _col;
+            List<int> pool = new List<int>();
+
+            int count = 0;
             for (int i = 0; i < nodes; i++)
             {
                 for (int j = 0; j < nodes; j++)
                 {
-                    m[i, j] = 0;
+                    pool.Add(count++);
                 }
             }
-            Algorithms.Iota(m.ColLabels, 1);
-            Algorithms.Iota(m.RowLabels, 1);
-            // Console.WriteLine("Print: " + m[0, 0].ToString());
+            if (!selfties)
+            {
+                for (int i = 0; i < nodes; i ++)
+                {
+                    pool.Remove(i * nodes + i);
+                }
+            }
             if (directed)
             {
-                int pos_count = 0;
-                int neg_count = 0;
-                int rand_row;
-                int rand_col;
-
-
-                while (pos_count < posedges)
+                while (posedges > 0)
                 {
-                    while (true)
+                    bool found = false;
+                    while (pool.Count > 0)
                     {
-                        rand_row = RNG.RandomInt(nodes - 1);
-                        rand_col = RNG.RandomInt(nodes - 1);
-                        if (m[rand_row, rand_col] == 0 && selfties)
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
+
+                        if (selfties)
                         {
-                            m[rand_row, rand_col] = (int)RNG.RandomInt(1, vmax); // Inclusive upper bound
-                            pos_count++;
+                            m[_row, _col] = (int)RNG.RandomInt(1, vmax); // Inclusive upper bound
+                            posedges--;
+                            pool.Remove(draw);
+                            found = true;
                             break;
                         }
-                        else if (m[rand_row, rand_col] == 0 && !selfties)
+                        else
                         {
-                           if (rand_row != rand_col)
+                            if (_row != _col)
                             {
-                                m[rand_row, rand_col] = (int)RNG.RandomInt(1, vmax); // Inclusive upper bound
-                                pos_count++;
+                                m[_row, _col] = (int)RNG.RandomInt(1, vmax); // Inclusive upper bound
+                                posedges--;
+                                pool.Remove(draw);
+                                found = true;
                                 break;
                             }
+                            else
+                            {
+                                pool.Remove(draw);
+                            }
                         }
+                    }
+                    if (found == false)
+                    {
+                        throw new Exception("Falied to find a valid randomization of positive edges.");
                     }
                 }
 
 
-                while (neg_count < negedges)
+                while (negedges > 0)
                 {
-                    while (true)
+                    bool found = true;
+                    while (pool.Count > 0)
                     {
-                        rand_row = RNG.RandomInt(nodes - 1);
-                        rand_col = RNG.RandomInt(nodes - 1);
-                        if (m[rand_row, rand_col] == 0 && selfties)
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
+                        if (selfties)
                         {
-                            m[rand_row, rand_col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin)); // Inclusive lower bound
-                            neg_count++;
+                            m[_row, _col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin)); // Inclusive lower bound
+                            negedges--;
+                            pool.Remove(draw);
+                            found = true;
                             break;
                         }
-                        else if (m[rand_row, rand_col] == 0 && !selfties)
+                        else
                         {
-                            if (rand_row != rand_col)
+                            if (_row != _col)
                             {
-                                m[rand_row, rand_col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin)); // Inclusive lower bound
-                                neg_count++;
+                                m[_row, _col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin)); // Inclusive lower bound
+                                negedges--;
+                                pool.Remove(draw);
+                                found = true;
                                 break;
+                            }
+                            else
+                            {
+                                pool.Remove(draw);
                             }
                         }
                     }
+                    if (found == false)
+                    {
+                        throw new Exception("Failed to find a valid randomization of negative edges.");
+                    }
                 }
-                
+
             }
-
+        
             else
             {
-                int pos_count = 0;
-                int neg_count = 0;
-                int rand_row;
-                int rand_col;
-
-
-                while (pos_count < posedges)
+                if (!selfties)
                 {
-                    while (true)
+                    if ((posedges % 2 != 0) || (negedges % 2 != 0))
+                        throw new Exception("Input postive edges and negative edges are not both even!");
+                }
+
+                while (posedges > 0)
+                {
+                    bool found = false;
+                    while (pool.Count > 0)
                     {
-                        rand_row = RNG.RandomInt(nodes - 1);
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
                         if (selfties)
                         {
-                            rand_col = (int)RNG.RandomInt(rand_row, nodes - 1);
-                            if (m[rand_row, rand_col] == 0)
+                            if (_row != _col && pool.Count > 1)
                             {
-                                m[rand_row, rand_col] = (int)RNG.RandomInt(1, vmax);
-                                m[rand_col, rand_row] = m[rand_row, rand_col];
-                                pos_count++;
+                                m[_row, _col] = (int)RNG.RandomInt(1, vmax);
+                                m[_col, _row] = m[_row, _col];
+                                posedges--;
+                                posedges--;
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
+                                found = true;
                                 break;
+                            }
+                            else if (_row == _col)
+                            {
+                                m[_row, _col] = (int)RNG.RandomInt(1, vmax);
+                                posedges--;
+                                pool.Remove(draw);
+                                found = true;
+                                break;
+                            }
+                            else
+                            {
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
                             }
                         }
                         else
                         {
-                            if (rand_row < nodes - 1)
+                            if (pool.Count > 1)
                             {
-                                rand_col = (int)RNG.RandomInt(rand_row + 1, nodes - 1);
-                                if (m[rand_row, rand_col] == 0)
-                                {
-                                    m[rand_row, rand_col] = (int)RNG.RandomInt(1, vmax);
-                                    m[rand_col, rand_row] = m[rand_row, rand_col];
-                                    pos_count++;
-                                    break;
-                                }
+                                m[_row, _col] = (int)RNG.RandomInt(1, vmax);
+                                m[_col, _row] = m[_row, _col];
+                                posedges--;
+                                posedges--;
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
+                                found = true;
+                                break;
+                            }
+                            else
+                            {
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
                             }
                         }
 
                     }
+                    if (found == false)
+                    {
+                        throw new Exception("Failed to find a valid randomization of positive edges.");
+                    }
                 }
 
 
-                while (neg_count < negedges)
+                while (negedges > 0)
                 {
-                    while (true)
+                    bool found = false;
+                    while (pool.Count > 0)
                     {
-                        rand_row = RNG.RandomInt(nodes - 1);
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
                         if (selfties)
                         {
-                            rand_col = (int)RNG.RandomInt(rand_row, nodes - 1);
-                            if (m[rand_row, rand_col] == 0)
+                            if (_row != _col && pool.Count > 1)
                             {
-                                m[rand_row, rand_col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin));
-                                m[rand_col, rand_row] = m[rand_row, rand_col];
-                                neg_count++;
+                                m[_row, _col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin));
+                                m[_col, _row] = m[_row, _col];
+                                negedges--;
+                                negedges--;
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
+                                found = true;
                                 break;
+                            }
+                            else if (_row == _col)
+                            {
+                                m[_row, _col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin));
+                                negedges--;
+                                pool.Remove(draw);
+                                found = true;
+                                break;
+                            }
+                            else
+                            {
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
                             }
                         }
                         else
                         {
-                            if (rand_row < nodes - 1)
+                            if (_row != _col && pool.Count > 1)
                             {
-                                rand_col = (int)RNG.RandomInt(rand_row + 1, nodes - 1);
-                                if (m[rand_row, rand_col] == 0)
-                                {
-                                    m[rand_row, rand_col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin));
-                                    m[rand_col, rand_row] = m[rand_row, rand_col];
-                                    neg_count++;
-                                    break;
-                                }
+                                m[_row, _col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin));
+                                m[_col, _row] = m[_row, _col];
+                                negedges--;
+                                negedges--;
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
+                                found = true;
+                                break;
+                            }
+                            else
+                            {
+                                pool.Remove(draw);
+                                pool.Remove(_col * nodes + _row);
                             }
                         }
+                    }
+                    if (found == false)
+                    {
+                        throw new Exception("Failed to find a valid randomization of negative edges.");
                     }
                 }
             }
@@ -1063,7 +1181,7 @@ namespace Network.Matrices
         {
             int nodes = modelSpec.Rows;
             int i;
-            const int UPPER_BOUND = 200;
+            // const int UPPER_BOUND = 200;
             Vector vmin, vmax;
             Vector deg, pos_deg, neg_deg;
 

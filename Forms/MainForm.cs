@@ -62,11 +62,12 @@ namespace NetworkGUI
         string inputFile;
         List<Dictionary<string, int>> networkSpec = null;
         Dictionary<string, List<Matrix>> mRandTable = null;
+        List<Matrix> mRandList = null;
 
         // Configuration Models
         bool _configDirected;
         MatrixTable networkSpec_data = null;
-        Dictionary<string, List<Matrix>> mConfigTable = null;
+        // Dictionary<string, List<Matrix>> mConfigTable = null;
         //
 
         Network.NetworkGUI net = new Network.NetworkGUI();
@@ -344,12 +345,6 @@ namespace NetworkGUI
 
                 case "Multiplex":
                     break;
-                // Yushan
-                case "GlobalRandom":
-                    break;
-                case "ConfigModel":
-                    break;
-                //
 
                 default:
                     net.LoadMatrixIntoDataGridView(dataGrid, displayMatrix);
@@ -654,7 +649,6 @@ namespace NetworkGUI
                     else
                         net.LoadMultiplexNull(dataGrid, currentYear, fileNames, openFileDialog.FileName, loadFrom, FirstOrder);
                     break;
-
 
 
             }
@@ -1012,6 +1006,25 @@ namespace NetworkGUI
                 {
                     net.mTable["Data"] = net.mList[currentYear - _ABMForm.netID];
                 }
+
+                // Yushan
+                else if (loadFrom == "GlobalRandom")
+                {
+                    if (currentYear == _globalRandomForm.NumNetID)
+                    {
+                        currentYear = 0;
+                    }
+                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                }
+                else if (loadFrom == "ConfigModel")
+                {
+                    if (currentYear == _configModelForm.NumNetID)
+                    {
+                        currentYear = 0;
+                    }
+                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                }
+                //
             }
             catch (Exception E)
             {
@@ -1084,6 +1097,24 @@ namespace NetworkGUI
                 {
                     net.mTable["Data"] = net.mList[currentYear - _ABMForm.netID];
                 }
+                // Yushan
+                else if (loadFrom == "GlobalRandom")
+                {
+                    if (currentYear == -1)
+                    {
+                        currentYear = _globalRandomForm.NumNetID - 1;
+                    }
+                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                }
+                else if (loadFrom == "ConfigModel")
+                {
+                    if (currentYear == -1)
+                    {
+                        currentYear = _configModelForm.NumNetID - 1;
+                    }
+                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                }
+                //
             }
             catch (Exception E)
             {
@@ -1119,6 +1150,7 @@ namespace NetworkGUI
 
             JumpToForm jump = new JumpToForm();
             jump.year = currentYear;
+
             jump.ShowDialog();
             try
             {
@@ -1160,7 +1192,16 @@ namespace NetworkGUI
                         newYear = jump.year;
                         net.mTable["Data"] = net.mList[jump.year - _ABMForm.netID];
                     }
-
+                    // Yushan
+                    else if (loadFrom == "GlobalRandom")
+                    {
+                        net.LoadGlobalRandom(mRandList, displayMatrix, jump.year);
+                    }
+                    else if (loadFrom == "ConfigModel")
+                    {
+                        net.LoadConfigModel(mRandList, displayMatrix, jump.year);
+                    }
+                    //
                 }
             }
             catch (Exception E)
@@ -1216,6 +1257,16 @@ namespace NetworkGUI
                     currentYear = _ABMForm.netID;
                     net.mTable["Data"] = net.mList[0];
                 }
+                // Yushan
+                else if (loadFrom == "GlobalRandom")
+                {
+                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                }
+                else if (loadFrom == "ConfigModel")
+                {
+                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                }
+                //
                 MessageBox.Show("That year is not present in this file!", "Error!");
             }
         }
@@ -1273,6 +1324,11 @@ namespace NetworkGUI
             {
                 currentYear = _ABMForm.netID + _ABMForm.networks - 1;
                 net.mTable["Data"] = net.mList[currentYear - _ABMForm.netID];
+            }
+            else if (loadFrom == "GlobalRandom")
+            {
+                currentYear = _globalRandomForm.NumNetID - 1;
+                net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
             }
 
             if (net.CohesionFilename != null)
@@ -1338,6 +1394,16 @@ namespace NetworkGUI
                 net.mTable["Data"] = net.mList[0];
             }
 
+            // Yushan
+            else if (loadFrom == "GlobalRandom")
+            {
+                currentYear = 0;
+                net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+            }
+            else if (loadFrom == "ConfigModel")
+            {
+                net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+            }
             if (net.CohesionFilename != null)
                 net.CohesionMatrix = MatrixReader.ReadMatrixFromFile(net.CohesionFilename, currentYear);
 
@@ -1394,7 +1460,7 @@ namespace NetworkGUI
         {
             if (loadFrom == "")
                 return;
-            if (displayMatrix == "Counter")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+            if (displayMatrix == "Counter")
             {
                 counterDataFileToolStripMenuItem_Click(sender, e);
                 return;
@@ -1417,7 +1483,9 @@ namespace NetworkGUI
                 progress.endYear = endYear;
                 progress.startYear = startYear;
                 progress.curYear = 0;
+                
                 progress.Show();
+
 
                 // Should we standardize
 
@@ -1456,6 +1524,20 @@ namespace NetworkGUI
                     else if (displayMatrix == "CBCO" || displayMatrix == "CBCODiag")
                         net.SaveCBCOverlapToFile(saveFileDialog.FileName, year, displayMatrix != "Characteristics",
                             displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwrite && year == startYear, diag);
+                    //Yushan
+                    else if (loadFrom == "GlobalRandom")
+                    {
+                        net.LoadGlobalRandom(mRandList, displayMatrix, year);
+                        net.SaveMatrixToMatrixFile(saveFileDialog.FileName, year, displayMatrix, displayMatrix != "Characteristics",
+    displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwrite && year == startYear);
+                    }
+                    else if (loadFrom == "ConfigModel")
+                    {
+                        net.LoadConfigModel(mRandList, displayMatrix, year);
+                        net.SaveMatrixToMatrixFile(saveFileDialog.FileName, year, displayMatrix, displayMatrix != "Characteristics",
+    displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwrite && year == startYear);
+                    }
+                    //
                     else
                         net.SaveMatrixToMatrixFile(saveFileDialog.FileName, year, displayMatrix, displayMatrix != "Characteristics",
                             displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwrite && year == startYear);
@@ -1496,7 +1578,18 @@ namespace NetworkGUI
                         {
                             year = net.LoadFromMonadicFile(openFileDialog.FileName, year + 1);
                         }
-
+                        // Yushan
+                        else if (loadFrom == "GlobalRandom")
+                        {
+                            net.LoadGlobalRandom(mRandList, displayMatrix, year + 1);
+                            ++year;
+                        }
+                        else if (loadFrom == "ConfigModel")
+                        {
+                            net.LoadConfigModel(mRandList, displayMatrix, year + 1);
+                            ++year;
+                        }
+                        //
                         if (net.CohesionFilename != null)
                             net.CohesionMatrix = MatrixReader.ReadMatrixFromFile(net.CohesionFilename, year);
                         //DoLoadCorrect(year);
@@ -1534,6 +1627,16 @@ namespace NetworkGUI
                 {
                     net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);
                 }
+                // Yushan
+                else if (loadFrom == "GlobalRandom")
+                {
+                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                }
+                else if (loadFrom == "ConfigModel")
+                {
+                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                }
+                //
             }
         }
 
@@ -1628,6 +1731,17 @@ namespace NetworkGUI
                             net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);
                             ++year;
                         }
+
+                        //Yushan
+                        else if (loadFrom == "GlobalRandom")
+                        {
+                            net.LoadGlobalRandom(mRandList, displayMatrix, year + 1);
+                        }
+                        else if (loadFrom == "ConfigModel")
+                        {
+                            net.LoadConfigModel(mRandList, displayMatrix, year + 1);                           
+                        }
+                        //
                         else if (loadFrom == "Monadic")
                         {
                             year = net.LoadFromMonadicFile(openFileDialog.FileName, year + 1);
@@ -2808,10 +2922,16 @@ namespace NetworkGUI
             selfTies = _globalRandomForm.SelfTies;
             networkSpec = _globalRandomForm.loadFromInputFile(inputFile, sign, selfTies);
             numNetID = networkSpec.Count;
+
             loadFrom = "GlobalRandom";
-            SetNewDisplayMatrix("GlobalRandom");
+            SetNewDisplayMatrix("Data");
             SetFormTitle();
-            net.LoadGlobalRandom(dataGrid, mRandTable, _globalRandomForm.NumRandNet, displayMatrix, _globalDirected, sign, selfTies, networkSpec);
+
+            currentYear = 0;
+            mRandTable = RandomMatrix.LoadGlobalRandom(numRandNet, _globalDirected, sign, selfTies, networkSpec);
+            mRandList  = net.ListGlobalRandom(mRandTable, numRandNet, displayMatrix, sign, networkSpec);
+            net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+            LoadData();
             
         }
 
@@ -2829,11 +2949,15 @@ namespace NetworkGUI
             networkSpec = _globalRandomForm.loadFromInputFile(inputFile, sign, selfTies);
             numNetID = networkSpec.Count;
 
-            loadFrom = "Random";
-            SetNewDisplayMatrix("GlobalRandom");
-            net.LoadGlobalRandom(dataGrid, mRandTable, _globalRandomForm.NumRandNet, displayMatrix, _globalDirected, sign, selfTies, networkSpec);
-
+            loadFrom = "GlobalRandom";
+            SetNewDisplayMatrix("Data");
             SetFormTitle();
+
+            currentYear = 0;
+            mRandTable = RandomMatrix.LoadGlobalRandom(numRandNet, _globalDirected, sign, selfTies, networkSpec);
+            mRandList = net.ListGlobalRandom(mRandTable, numRandNet, displayMatrix, sign, networkSpec);
+            net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+            LoadData();
         }
 
         // Directected Configuration Model
@@ -2849,12 +2973,17 @@ namespace NetworkGUI
             selfTies = _configModelForm.SelfTies;
             networkSpec_data = _configModelForm.loadFromInputFile(inputFile, sign, selfTies);
 
-            loadFrom = "Random";
-            SetNewDisplayMatrix("ConfigModel");
-            // Console.WriteLine("Got here!");
-            net.LoadConfigModel(dataGrid, mRandTable, _configModelForm.NumRandNet, displayMatrix, _configDirected, sign, selfTies, networkSpec_data);
-
+            loadFrom = "ConfigModel";
+            SetNewDisplayMatrix("Data");
             SetFormTitle();
+
+            currentYear = 0;
+            mRandTable = RandomMatrix.LoadConfigModel(numRandNet, _configDirected, sign, selfTies, networkSpec_data);
+            mRandList = net.ListConfigModel(mRandTable, numRandNet, displayMatrix, _configDirected, sign, networkSpec_data);
+            net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+            LoadData();
+
+            
         }
 
         private void configModelUndirectedToolStripMenuIem_Click(object sender, EventArgs e)
@@ -2869,12 +2998,16 @@ namespace NetworkGUI
             selfTies = _configModelForm.SelfTies;
             networkSpec_data = _configModelForm.loadFromInputFile(inputFile, sign, selfTies);
 
-            loadFrom = "Random";
-            SetNewDisplayMatrix("ConfigModel");
-            // Console.WriteLine("Got here!");
-            net.LoadConfigModel(dataGrid, mRandTable, _configModelForm.NumRandNet, displayMatrix, _configDirected, sign, selfTies, networkSpec_data);
-
+            loadFrom = "ConfigModel";
+            SetNewDisplayMatrix("Data");
             SetFormTitle();
+
+
+            currentYear = 0;
+            mRandTable = RandomMatrix.LoadConfigModel(numRandNet, _configDirected, sign, selfTies, networkSpec_data);
+            mRandList = net.ListConfigModel(mRandTable, numRandNet, displayMatrix, _configDirected, sign, networkSpec_data);
+            net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+            LoadData();
         }
 
 
@@ -2963,6 +3096,10 @@ namespace NetworkGUI
                     else if (loadFrom == "ValuedRandom")
                     {
                         net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);
+                    }
+                    else if (loadFrom == "GlobalRandom")
+                    {
+                        net.LoadGlobalRandom(mRandList, displayMatrix, year);
                     }
                     if (year != previousYear && year <= endYear)
                     {
@@ -3491,12 +3628,12 @@ namespace NetworkGUI
 
             PathBasedImbalance PIF = new PathBasedImbalance();
             
-            double[,] output = PIF.displayScript(openFileDialog.FileName, 3, false);
+            double[,] output = PIF.displayScript(openFileDialog.FileName, 3, true);
             SetNewDisplayMatrix("PathBased");
             net.ClearPreviousData(displayMatrix, "Dyadic");
             SetChecked();
             
-            net.LoadPathBasedIntoDataGridView(output, dataGrid, displayMatrix, 3, false);
+            net.LoadPathBasedIntoDataGridView(output, dataGrid, displayMatrix, 3, true);
         }
 
         private void thirdOrderPathBasedToolStripMenuItem_Click(object sender, EventArgs e)
@@ -4006,7 +4143,7 @@ namespace NetworkGUI
                     }
                     progress.curYear = year;
                     Application.DoEvents();
-                    previousYear = year;
+                    previousYear = year - 1;
                 }
 
                 if (currentYear == endYear)
