@@ -1867,8 +1867,16 @@ namespace NetworkGUI
                     {
                         net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);
                     }
-                    
-
+                    // Yushan
+                    else if (loadFrom == "GlobalRandom")
+                    {
+                        net.LoadGlobalRandom(mRandList, displayMatrix, year);
+                    }
+                    else if (loadFrom == "ConfigModel")
+                    {
+                        net.LoadConfigModel(mRandList, displayMatrix, year);
+                    }
+                    //
                     else if (loadFrom == "Monadic")
                     {
                         year = net.LoadFromMonadicFile(openFileDialog.FileName, year );
@@ -1899,8 +1907,15 @@ namespace NetworkGUI
                         string s = net.MakeDefaultDyadicLabel(displayMatrix);
                         if (year != startYear)
                             s = null;
-                        net.SaveMatrixToDyadicFile(saveFileDialog.FileName, year, displayMatrix, s, _optionsForm.SaveOverwrite && year == startYear);
-
+                        //Yushan
+                        if (loadFrom == "GlobalRandom" || loadFrom == "ConfigModel")
+                        {
+                            net.SaveMatrixToMatrixFile(saveFileDialog.FileName, year, displayMatrix, displayMatrix != "Characteristics",
+displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwrite && year == startYear);
+                        } 
+                        else
+                            net.SaveMatrixToDyadicFile(saveFileDialog.FileName, year, displayMatrix, s, _optionsForm.SaveOverwrite && year == startYear);
+                        
                     }
                     p.curYear = year;
                     previousYear = year;
@@ -1925,6 +1940,16 @@ namespace NetworkGUI
                 {
                     net.LoadFromMonadicFile(openFileDialog.FileName, currentYear);
                 }
+                // Yushan
+                else if (loadFrom == "GlobalRandom")
+                {
+                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                }
+                else if (loadFrom == "ConfigModel")
+                {
+                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                }
+                //
             }
         }
 

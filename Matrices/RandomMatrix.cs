@@ -919,7 +919,7 @@ namespace Network.Matrices
                         int maxIndex = 0;
                         for (int k = 0; k < nodes; k++)
                         {
-                            if (deg[k] > temp)
+                            if (deg[k] > temp && row_pool.Exists(x => x == k))
                             {
                                 temp = (int)deg[k];
                                 maxIndex = k;
@@ -1032,7 +1032,7 @@ namespace Network.Matrices
                         int maxIndex = 0;
                         for (int k = 0; k < nodes; k++)
                         {
-                            if (deg[k] > temp)
+                            if (deg[k] > temp && row_pool.Exists(x => x == k))
                             {
                                 temp = (int)deg[k];
                                 maxIndex = k;
