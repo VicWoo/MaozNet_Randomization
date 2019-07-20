@@ -747,7 +747,7 @@ namespace Network.Matrices
             Vector vmin, vmax;
             Vector deg, pos_deg, neg_deg;
             Matrix m = new Matrix(nodes);
-            // m.Clear();
+            m.Clear();
             vmin = modelSpec.GetColVector(modelSpec.ColLabels["Min"]);
             vmax = modelSpec.GetColVector(modelSpec.ColLabels["Max"]);
 
@@ -846,334 +846,240 @@ namespace Network.Matrices
         public static Matrix GenerateUndirectedConfigModel(bool sign, bool selfties, Matrix modelSpec)
         {
             int nodes = modelSpec.Rows;
-            int i;
+            int i, j;
             // const int UPPER_BOUND = 200;
             Vector vmin, vmax;
+            Vector orig_deg, orig_pos_deg, orig_neg_deg;
             Vector deg, pos_deg, neg_deg;
+            List<List<int>> col_pool = new List<List<int>>();
+            List<List<int>> pos_col_pool = new List<List<int>>();
+            List<List<int>> neg_col_pool = new List<List<int>>();
+            List<int> row_pool = new List<int>();
+            // List<int> pos_row_pool = new List<int>();
+            // List<int> neg_row_pool = new List<int>();
+            Matrix m = new Matrix(nodes);
+
 
             vmin = modelSpec.GetColVector(modelSpec.ColLabels["Min"]);
             vmax = modelSpec.GetColVector(modelSpec.ColLabels["Max"]);
+               
 
-            Matrix m = new Matrix(nodes);
- 
             if (sign)
             {
-                pos_deg = modelSpec.GetColVector(modelSpec.ColLabels["Pos. Degree"]);
-                neg_deg = modelSpec.GetColVector(modelSpec.ColLabels["Neg. Degree"]);
-                deg = pos_deg + neg_deg;
-                if (selfties)
+                orig_pos_deg = modelSpec.GetColVector(modelSpec.ColLabels["Pos. Degree"]);
+                orig_neg_deg = modelSpec.GetColVector(modelSpec.ColLabels["Neg. Degree"]);
+                if (orig_pos_deg.sum() % 2 != 0)
                 {
+                    throw new Exception("The sum of the positive degrees is not even!");
+                }
+                if (orig_neg_deg.sum() % 2 != 0)
+                {
+                    throw new Exception("The sum of the negative degrees is not even!");
+                }
+                int loop = 0;
+                while (true)
+                {
+                    pos_deg = new Vector(orig_pos_deg);
+                    neg_deg = new Vector(orig_neg_deg);
+                    deg = pos_deg + neg_deg;
+
+                    col_pool = new List<List<int>>();
+                    pos_col_pool = new List<List<int>>();
+                    neg_col_pool = new List<List<int>>();
+                    row_pool = new List<int>();
+                    
+                    // Create row_pools and col_pools
                     for (i = 0; i < nodes; i++)
                     {
-                        List<int> pool = new List<int>();
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i; k < nodes; k++)
+                        col_pool.Add(new List<int>());
+                        // neg_col_pool.Add(new List<int>());
+                        if (deg[i] > 0)
                         {
-                            pool.Add(k);
-                        }
-                        // Configure the positive edges
-                        if (pool.Count >= pos_deg[i])
-                        {
-                            for (int k = 0; k < pos_deg[i]; k++)
+                            row_pool.Add(i);
+                            //if (pos_deg[i] > 0)
+                            //{
+                            //    pos_row_pool.Add(i);
+                            //}
+                            //if (neg_deg[i] > 0)
+                            //{
+                            //    neg_row_pool.Add(i);
+                            //}
+                            for (j = 0; j < nodes; j++)
                             {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
-                                {
-                                    int _col;
-                                    int vtemp;
-                                    _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    if (Math.Min(vmax[i], vmax[_col]) > 0 && pos_deg[_col] > 0)
-                                    {
-                                        vtemp = (int)RNG.RandomInt(1, Math.Min(vmax[i], vmax[_col]));
-                                        m[_col, i] = m[i, _col] = vtemp;
-                                        pos_deg[_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-                                if (found == false)
-                                {
-                                    Console.WriteLine("Row: " + i.ToString() + " " + "Loop: " + loop.ToString());
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
-                                }
+                                if (selfties || i != j)
+                                    col_pool[i].Add(j);
                             }
-                        }
-                        else
-                        {
-                            Console.WriteLine("pool.Count: " + pool.Count.ToString() + " " + "row: " + i.ToString() + " deg[row]: " + pos_deg[i].ToString());
-                            throw new Exception("Failed to generate a valid configuration with the input positive degrees");
-                        }
-
-                        // Configure the negative edges
-                        if (pool.Count >= neg_deg[i])
-                        {
-                            for (int k = 0; k < neg_deg[i]; k++)
-                            {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
-                                {
-                                    int _col;
-                                    int vtemp;
-                                    _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    if (Math.Min(Math.Abs(vmin[i]), Math.Abs(vmin[_col])) > 0 && neg_deg[_col] > 0)
-                                    {
-                                        vtemp = (-1) * (int)RNG.RandomInt(1, Math.Min(Math.Abs(vmin[i]), Math.Abs(vmin[_col])));
-                                        m[_col, i] = m[i, _col] = vtemp;
-                                        neg_deg[_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-                                if (found == false)
-                                {
-                                    Console.WriteLine("Row: " + i.ToString() + " " + "Loop: " + loop.ToString());
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("pool.Count: " + pool.Count.ToString() + " " + "row: " + i.ToString() + " deg[row]: " + neg_deg[i].ToString());
-                            throw new Exception("Failed to generate a valid configuration with the input negative degrees");
                         }
                     }
-                }
-                else
-                {
-                    for (i = 0; i < (nodes - 1); i++)
+                    int _row, _col;
+                    while (row_pool.Count > 0 && deg.sum() > 0)
                     {
-                        List<int> pool = new List<int>();
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i + 1; k < nodes; k++)
+                        //_row = row_pool[RNG.RandomInt(row_pool.Count - 1)];
+                        int temp = 0;
+                        int maxIndex = 0;
+                        for (int k = 0; k < nodes; k++)
                         {
-                            pool.Add(k);
-                        }
-
-                        // Configure the positive edges
-                        if (pool.Count >= pos_deg[i])
-                        {
-                            for (int k = 0; k < pos_deg[i]; k++)
+                            if (deg[k] > temp)
                             {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
+                                temp = (int)deg[k];
+                                maxIndex = k;
+                            }
+                        }
+                        _row = maxIndex;
+                        // bool found = false;
+                        while (col_pool[_row].Count > 0)
+                        {
+                            _col = col_pool[_row][RNG.RandomInt(col_pool[_row].Count - 1)];
+                            if (pos_deg[_row] >= neg_deg[_row])
+                            {
+                                if (Math.Min(vmax[_row], vmax[_col]) > 0 && pos_deg[_col] > 0)
                                 {
-                                    int _col;
-                                    int vtemp;
-                                    _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    if (Math.Min(vmax[i], vmax[_col]) > 0 && pos_deg[_col] > 0)
+                                    m[_row, _col] = (int)RNG.RandomInt(1, Math.Min(vmax[_row], vmax[_col]));
+                                    m[_col, _row] = m[_row, _col];
+                                    col_pool[_row].Remove(_col);
+                                    pos_deg[_row]--;
+                                    deg[_row]--;
+
+                                    if (_col != _row)
                                     {
-                                        vtemp = (int)RNG.RandomInt(1, Math.Min(vmax[i], vmax[_col]));
-                                        m[_col, i] = m[i, _col] = vtemp;
+                                        col_pool[_col].Remove(_row);
                                         pos_deg[_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
+                                        deg[_col]--;
+                                        if (deg[_col] == 0)
+                                            row_pool.Remove(_col);
                                     }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
+                                    // found = true;
+                                    break;
                                 }
-                                if (found == false)
+                                else
                                 {
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
+                                    col_pool[_row].Remove(_col);
                                 }
                             }
-                        }
-                        else
-                        {
-                            throw new Exception("Failed to generate a valid configuration with the input positive degrees");
-                        }
-
-                        // Configure the negative edges
-                        if (pool.Count >= neg_deg[i])
-                        {
-                            for (int k = 0; k < neg_deg[i]; k++)
+                            else
                             {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
+                                if (Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])) > 0 && neg_deg[_col] > 0)
                                 {
-                                    int _col;
-                                    int vtemp;
-                                    _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    if (Math.Min(Math.Abs(vmin[i]), Math.Abs(vmin[_col])) > 0 && neg_deg[_col] > 0)
+                                    m[_row, _col] = (-1) * (int)RNG.RandomInt(1, Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])));
+                                    m[_col, _row] = m[_row, _col];
+                                    col_pool[_row].Remove(_col);
+                                    neg_deg[_row]--;
+                                    deg[_row]--;
+
+                                    if (_col != _row)
                                     {
-                                        vtemp = (-1) * (int)RNG.RandomInt(1, Math.Min(Math.Abs(vmin[i]), Math.Abs(vmin[_col])));
-                                        m[_col, i] = m[i, _col] = vtemp;
+                                        col_pool[_col].Remove(_row);
                                         neg_deg[_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
+                                        deg[_col]--;
+                                        if (deg[_col] == 0)
+                                            row_pool.Remove(_col);
                                     }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
+                                    // found = true;
+                                    break;
                                 }
-                                if (found == false)
+                                else
                                 {
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
+                                    col_pool[_row].Remove(_col);
                                 }
                             }
+
                         }
-                        else
+                        if (deg[_row] == 0 || col_pool[_row].Count == 0)
                         {
-                            throw new Exception("Failed to generate a valid configuration with the input negative degrees");
+                            row_pool.Remove(_row);
                         }
                     }
+                    if (deg.sum() == 0)
+                    {
+                        return m;
+                    }
+                    loop++;
                 }
             }
             else
             {
-                deg = modelSpec.GetColVector(0);
-                if (selfties)
+                orig_deg = modelSpec.GetColVector(modelSpec.ColLabels["Degree"]);
+                if (orig_deg.sum() % 2 != 0)
                 {
-
+                    throw new Exception("The sum of the degrees is not even!");
+                }
+                int loop = 0;
+                while (true)
+                {
+                    deg = new Vector(orig_deg);
+                    col_pool = new List<List<int>>();
+                    row_pool = new List<int>();
+                    // Create row_pools and col_pools
                     for (i = 0; i < nodes; i++)
                     {
-                        List<int> pool = new List<int>();
-                        
-                       // Console.WriteLine("Row: " + i.ToString() + " Degree: " + deg[i].ToString());
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i; k < nodes; k++)
+                        col_pool.Add(new List<int>());
+                        // neg_col_pool.Add(new List<int>());
+                        if (deg[i] > 0)
                         {
-                            pool.Add(k);
-                        }
-
-                        // Console.WriteLine(pool.Count.ToString());
-                        // Configure the edges
-                        if (pool.Count >= deg[i])
-                        {
-                            for (int k = 0; k < deg[i]; k++)
+                            row_pool.Add(i);
+                            for (j = 0; j < nodes; j++)
                             {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
-                                {
-                                    // Console.WriteLine(loop.ToString());
-                                    int _col;
-                                    int vtemp;
-                                    _col = pool[RNG.RandomInt(pool.Count - 1)];
-                                    if (Math.Min(vmax[i], vmax[_col]) > 0 && deg[_col] > 0)
-                                    {
-                                        vtemp = (int)RNG.RandomInt(1, Math.Min(vmax[i], vmax[_col]));
-                                        m[_col, i] = m[i, _col] = vtemp;
-                                        // Console.WriteLine(deg[_col].ToString());
-                                        deg[_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-
-                                // Console.WriteLine(loop.ToString());
-                                if (found == false)
-                                {
-                                    // Console.WriteLine("Row: " + i.ToString() + " " + "Loop: " + loop.ToString());
-                                    
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
-                                }
+                                if (selfties || i != j)
+                                    col_pool[i].Add(j);
                             }
                         }
-                        else
-                        {
-                            // Console.WriteLine("pool.Count: " + pool.Count.ToString() + " " + "row: " + i.ToString() + " deg[row]: " + deg[i].ToString());
-                            throw new Exception("Failed to generate a valid configuration with the input degrees");
-                        }
                     }
-                }
-                else
-                {
-                    for (i = 0; i < (nodes - 1); i++)
+                    int _row, _col;
+                    while (row_pool.Count > 0 && deg.sum() > 0)
                     {
-                        List<int> pool = new List<int>();
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i + 1; k < nodes; k++)
+                        // _row = row_pool[RNG.RandomInt(row_pool.Count - 1)];
+                        int temp = 0;
+                        int maxIndex = 0;
+                        for (int k = 0; k < nodes; k++)
                         {
-                            pool.Add(k);
-                        }
-
-                        // Configure the edges
-                        if (pool.Count >= deg[i])
-                        {
-                            for (int k = 0; k < deg[i]; k++)
+                            if (deg[k] > temp)
                             {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
-                                {
-                                    int _col;
-                                    int vtemp;
-                                    _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    if (Math.Min(vmax[i], vmax[_col]) > 0 && deg[_col] > 0)
-                                    {
-                                        vtemp = (int)RNG.RandomInt(1, Math.Min(vmax[i], vmax[_col]));
-                                        m[_col, i] = m[i, _col] = vtemp;
-                                        deg[_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-                                if (found == false)
-                                {
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
-                                }
+                                temp = (int)deg[k];
+                                maxIndex = k;
                             }
                         }
-                        else
+                        _row = maxIndex;
+                        // bool found = false;
+                        while (col_pool[_row].Count > 0)
                         {
-                            throw new Exception("Failed to generate a valid configuration with the input degrees");
-                        }                     
+                            _col = col_pool[_row][RNG.RandomInt(col_pool[_row].Count - 1)];
+
+                            if (Math.Min(vmax[_row], vmax[_col]) > 0 && deg[_col] > 0)
+                            {
+                                m[_row, _col] = (int)RNG.RandomInt(1, Math.Min(vmax[_row], vmax[_col]));
+                                m[_col, _row] = m[_row, _col];
+                                col_pool[_row].Remove(_col);
+                                deg[_row]--;
+
+                                if (_col != _row)
+                                {
+                                    col_pool[_col].Remove(_row);
+                                    deg[_col]--;
+                                    if (deg[_col] == 0)
+                                        row_pool.Remove(_col);
+                                }
+                                // found = true;
+                                break;
+                            }
+                            else
+                            {
+                                col_pool[_row].Remove(_col);
+                            }
+                        }
+                        if (deg[_row] == 0 || col_pool[_row].Count == 0)
+                        {
+                            row_pool.Remove(_row);
+                        }
                     }
+                    if (deg.sum() == 0)
+                    {
+                        // throw new Exception("Failed to find a valid configuration with the input degrees!");
+                        return m;
+                    }
+                    loop++;
                 }
             }
-
-            return m;
+            // return m;
         }
 
         // Generate Undirected Configuration Models (Version 1.1)
@@ -1632,7 +1538,7 @@ namespace Network.Matrices
                     }
                     else
                     {
-                        mRandTable[net_ID].Add(GenerateUndirectedConfigModel_Revised(sign, selfties, modelSpec));
+                        mRandTable[net_ID].Add(GenerateUndirectedConfigModel(sign, selfties, modelSpec));
                     }
                 }
             }
