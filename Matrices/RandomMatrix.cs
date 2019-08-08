@@ -309,7 +309,7 @@ namespace Network.Matrices
             m.Clear();
             Algorithms.Iota(m.ColLabels, 1);
             Algorithms.Iota(m.RowLabels, 1);
-            Console.WriteLine("Edges: " + edges.ToString());
+            // Console.WriteLine("Edges: " + edges.ToString());
             int draw;
             int _row;
             int _col;
@@ -357,7 +357,7 @@ namespace Network.Matrices
                 if (!selfties)
                 {
                     if (edges % 2 != 0)
-                        throw new Exception("Input postive edges and negative edges are not both even!");
+                        throw new Exception("Input edges are not both even!");
                 }
 
                 while (edges > 0)
@@ -370,7 +370,7 @@ namespace Network.Matrices
                         _col = draw % nodes;
                         if (selfties)
                         {
-                            if (_row != _col && pool.Count > 1)
+                            if (_row != _col && pool.Count > 1 & edges > 1)
                             {
                                 m[_row, _col] = (int)RNG.RandomInt(1, vmax);
                                 m[_col, _row] = m[_row, _col];
@@ -397,7 +397,7 @@ namespace Network.Matrices
                         }
                         else
                         {
-                            if (pool.Count > 1)
+                            if (pool.Count > 1 & edges > 1)
                             {
                                 m[_row, _col] = (int)RNG.RandomInt(1, vmax);
                                 m[_col, _row] = m[_row, _col];
@@ -553,7 +553,7 @@ namespace Network.Matrices
                         _col = draw % nodes;
                         if (selfties)
                         {
-                            if (_row != _col && pool.Count > 1)
+                            if (_row != _col && pool.Count > 1 && posedges > 1)
                             {
                                 m[_row, _col] = (int)RNG.RandomInt(1, vmax);
                                 m[_col, _row] = m[_row, _col];
@@ -580,7 +580,7 @@ namespace Network.Matrices
                         }
                         else
                         {
-                            if (pool.Count > 1)
+                            if (pool.Count > 1 && posedges > 1)
                             {
                                 m[_row, _col] = (int)RNG.RandomInt(1, vmax);
                                 m[_col, _row] = m[_row, _col];
@@ -616,7 +616,7 @@ namespace Network.Matrices
                         _col = draw % nodes;
                         if (selfties)
                         {
-                            if (_row != _col && pool.Count > 1)
+                            if (_row != _col && pool.Count > 1 && negedges > 1)
                             {
                                 m[_row, _col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin));
                                 m[_col, _row] = m[_row, _col];
@@ -643,7 +643,7 @@ namespace Network.Matrices
                         }
                         else
                         {
-                            if (_row != _col && pool.Count > 1)
+                            if (_row != _col && pool.Count > 1 && negedges > 1)
                             {
                                 m[_row, _col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin));
                                 m[_col, _row] = m[_row, _col];
@@ -671,82 +671,296 @@ namespace Network.Matrices
             return m;
         }
 
+        // Generate Directed Global Randomization with input edge value being the sum of random network edges
+        public static Matrix GenerateDirectedGlobal(bool sign, bool selfties, Dictionary<string, int> modelSpec)
+        {
+            int nodes;
+            int vmax, vmin;
+            int posedges, negedges, edges;
+            vmin = modelSpec["Min Value"];
+            vmax = modelSpec["Max Value"];
+            nodes = modelSpec["Nodes"];
+
+            Matrix m = new Matrix(nodes, nodes, modelSpec["Network ID"]);
+            Algorithms.Iota(m.ColLabels, 1);
+            Algorithms.Iota(m.RowLabels, 1);
+
+            int draw;
+            int _row, _col;
+            List<int> pool = null;
+
+            while (true)
+            {
+                m.Clear();
+                pool = new List<int>();
+                // Create a pool containing all available edges
+                for (int i = 0; i < nodes; i++)
+                {
+                    for (int j = 0; j < nodes; j++)
+                    {
+                        if (selfties || i != j)
+                        {
+                            pool.Add(i * nodes + j);
+                        }
+                    }
+                }
+
+                if (sign)
+                {
+                    posedges = modelSpec["Pos. Edges"];
+                    negedges = modelSpec["Neg. Edges"];
+                    while (pool.Count > 0 && (posedges + negedges) > 0)
+                    {
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
+                        if (posedges >= negedges && posedges > 0)
+                        {
+                            int v; // Random value of the selected edge
+                            v = (int)RNG.RandomInt(1, Math.Min(posedges, vmax));
+                            m[_row, _col] = v;
+                            posedges -= v;
+                        }
+                        else if (negedges > posedges && negedges > 0)
+                        {
+                            int v; //  Random value of the selected edge
+                            v = (-1) * (int)RNG.RandomInt(1, Math.Min(negedges, Math.Abs(vmin)));
+                            m[_row, _col] = v;
+                            negedges += v;
+                        }
+                        pool.Remove(draw);
+                    }
+                    if ((posedges + negedges) == 0) return m;
+                }
+                else
+                {
+                    edges = modelSpec["Edges"];
+                    while (pool.Count > 0 && edges > 0)
+                    {
+                        int v; //  Random value of the selected edge
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
+                        v = (int)RNG.RandomInt(1, Math.Min(edges, vmax));
+                        m[_row, _col] = v;
+                        edges -= v;
+                        pool.Remove(draw);
+                    }
+                    if (edges == 0) return m;
+                }
+            }
+        }
+
+        // Generate Undirected Global Randomization with input edge value being the sum of random network edges
+        public static Matrix GenerateUndirectedGlobal(bool sign, bool selfties, Dictionary<string, int> modelSpec)
+        {
+            int nodes;
+            int vmin, vmax;
+            vmin = modelSpec["Min Value"];
+            vmax = modelSpec["Max Value"];
+            nodes = modelSpec["Nodes"];
+
+            Matrix m = new Matrix(nodes, nodes, modelSpec["Network ID"]);
+            Algorithms.Iota(m.ColLabels, 1);
+            Algorithms.Iota(m.RowLabels, 1);
+
+            int posedges, negedges, edges;
+            int draw;
+            int _row, _col;
+            List<int> pool = null;
+
+            while (true)
+            {
+                m.Clear();
+                pool = new List<int>();
+
+                // Create a pool containing all available edges
+                for (int i = 0; i < nodes; i++)
+                {
+                    for (int j = 0; j < nodes; j++)
+                    {
+                        if (selfties || i != j)
+                        {
+                            pool.Add(i * nodes + j);
+                        }
+                    }
+                }
+
+                if (sign)
+                {
+                    posedges = modelSpec["Pos. Edges"];
+                    negedges = modelSpec["Neg. Edges"];
+                    
+                    //Validate the input edges
+                    if (!selfties)
+                    {
+                        if ((posedges % 2 != 0) || (negedges % 2 != 0))
+                            throw new Exception("Input postive edges and negative edges are not both even!");
+                    }
+
+                    while (pool.Count > 0 && (posedges + negedges) > 0)
+                    {
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
+                        if (_row != _col && pool.Exists(x => x == (_col * nodes + _row)))
+                        {
+                            if (posedges >= negedges && posedges > 1)
+                            {
+                                int v; // Random value of the selected edge
+                                int edg_lim = posedges / 2;
+                                v = (int)RNG.RandomInt(1, Math.Min(edg_lim, vmax));
+                                m[_col, _row] = m[_row, _col] = v;
+                                posedges -= 2 * v;
+                            }
+                            else if (negedges > posedges && negedges > 1)
+                            {
+                                int v; // Random value of the selected edge
+                                int edg_lim = negedges / 2;
+                                v = (-1) * (int)RNG.RandomInt(1, Math.Min(edg_lim, Math.Abs(vmin)));
+                                m[_col, _row] = m[_row, _col] = v;
+                                negedges += 2 * v;
+                            }
+                            pool.Remove(draw);
+                            pool.Remove(_col * nodes + _row);
+                        }
+                        else if (_row == _col)
+                        {
+                            if (posedges >= negedges && posedges > 0)
+                            {
+                                int v; // Random value of the selected edge
+                                v = (int)RNG.RandomInt(1, Math.Min(posedges, vmax));
+                                m[_row, _col] = v;
+                                posedges -= v;
+                            }
+                            else if (negedges > posedges && negedges > 0)
+                            {
+                                int v; // Random value of the selected edge
+                                v = (-1) * (int)RNG.RandomInt(1, Math.Min(negedges, Math.Abs(vmin)));
+                                m[_row, _col] = v;
+                                negedges += v;
+                            }
+                            pool.Remove(draw);
+                        }
+                        else
+                        {
+                            pool.Remove(draw);
+                        }
+                    }
+                    if (posedges + negedges == 0)
+                    {
+                        return m;
+                    }
+                }
+                else
+                {
+                    edges = modelSpec["Edges"];
+
+                    // Validate the input edges
+                    if (!selfties)
+                    {
+                        if (edges % 2 != 0)
+                            throw new Exception("Input edges are not both even!");
+                    }
+
+                    while (pool.Count > 0 && edges > 0)
+                    {
+                        draw = pool[RNG.RandomInt(pool.Count - 1)];
+                        _row = draw / nodes;
+                        _col = draw % nodes;
+                        if (_row != _col && pool.Exists(x => x == (_col * nodes + _row)))
+                        {
+                            if (edges > 1)
+                            {
+                                int v; // Random value of the selected edge
+                                int edg_lim = edges / 2;
+                                v = (int)RNG.RandomInt(1, Math.Min(edg_lim, vmax));
+                                m[_col, _row] = m[_row, _col] = v;
+                                edges -= 2 * v;
+                            }
+                            pool.Remove(draw);
+                            pool.Remove(_col * nodes + _row);
+                        }
+                        else if (_row == _col)
+                        {
+                            if (edges > 0)
+                            {
+                                int v; // Random value of the selected edge
+                                v = (int)RNG.RandomInt(1, Math.Min(edges, vmax));
+                                m[_row, _col] = v;
+                                edges -= v;
+                            }
+                            pool.Remove(draw);
+                        }
+                        else
+                        {
+                            pool.Remove(draw);
+                        }
+                    }
+                    if (edges == 0)
+                    {
+                        return m;
+                    }
+                }
+
+            }
+        }
+
         // Load Global Randomization
         public static Dictionary<string, List<Matrix>> LoadGlobalRandom (int n, bool directed, bool sign, bool selfties, List<Dictionary<string, int>> networkSpec)
         {
             Dictionary<string, List<Matrix>> mRandTable = new Dictionary<string, List<Matrix>>();
             int numNet = networkSpec.Count;
             string net_id;
-            int nodes;
-            int edges;
-            int pos_edges;
-            int neg_edges;
-            int vmin;
-            int vmax;
-
+            //int nodes;
+            //int edges;
+            //int pos_edges;
+            //int neg_edges;
+            //int vmin;
+            //int vmax;
             int i, j;
 
-            if (sign)
+            for (i = 0; i < numNet; i++)
             {
-                for (i = 0; i < numNet; i++)
+                net_id = networkSpec[i]["Network ID"].ToString();
+                //nodes = networkSpec[i]["Nodes"];
+                //pos_edges = networkSpec[i]["Pos. Edges"];
+                //neg_edges = networkSpec[i]["Neg. Edges"];
+                //vmin = networkSpec[i]["Min Value"];
+                //vmax = networkSpec[i]["Max Value"];
+                // Console.WriteLine("SelfTies:" + selfties.ToString());
+                List<Matrix> mlist = new List<Matrix>();
+
+                for (j = 0; j < n; j++)
                 {
-                    net_id = networkSpec[i]["Network ID"].ToString();
-                    nodes = networkSpec[i]["Nodes"];
-                    pos_edges = networkSpec[i]["Pos. Edges"];
-                    neg_edges = networkSpec[i]["Neg. Edges"];
-                    vmin = networkSpec[i]["Min Value"];
-                    vmax = networkSpec[i]["Max Value"];
-                    // Console.WriteLine("SelfTies:" + selfties.ToString());
-                    List<Matrix> mlist = new List<Matrix>();
-
-                    for (j = 0; j < n; j++)
-                    {
-                        mlist.Add(GenerateGlobal(directed, sign, selfties, nodes, pos_edges, neg_edges, vmin, vmax));
-                    }
-
-                    mRandTable.Add(net_id, mlist);
-
+                    if (directed)
+                        mlist.Add(GenerateDirectedGlobal(sign, selfties, networkSpec[i]));
+                    else
+                        mlist.Add(GenerateUndirectedGlobal(sign, selfties, networkSpec[i]));
                 }
+
+                mRandTable.Add(net_id, mlist);
             }
-            else
-            {
-                for (i = 0; i < numNet; i++)
-                {
-                    net_id = networkSpec[i]["Network ID"].ToString();
-                    nodes = networkSpec[i]["Nodes"];
-                    edges = networkSpec[i]["Edges"];
-                    vmin = networkSpec[i]["Min Value"];
-                    vmax = networkSpec[i]["Max Value"];
-                    // Console.WriteLine("net_id: " + net_id + " " + "nodes: " + nodes.ToString());
-                    // Matrix temp = GenerateGlobal(directed, sign, selfties, nodes, edges, vmax);
-                    // Console.WriteLine("Matrix R: " + temp.Rows.ToString() + " " + "Matrix C: " +temp.Cols.ToString());
-
-                    List<Matrix> mlist = new List<Matrix>();
-
-                    for (j = 0; j < n; j++)
-                    {
-                        mlist.Add(GenerateGlobal(directed, sign, selfties, nodes, edges, vmax));
-                    }
-
-                    mRandTable.Add(net_id, mlist);
-                   
-                }
-            }
-
-
+            //nodes = networkSpec[i]["Nodes"];
+            //edges = networkSpec[i]["Edges"];
+            //vmin = networkSpec[i]["Min Value"];
+            //vmax = networkSpec[i]["Max Value"];
+            // Console.WriteLine("net_id: " + net_id + " " + "nodes: " + nodes.ToString());
+            // Matrix temp = GenerateGlobal(directed, sign, selfties, nodes, edges, vmax);
+            // Console.WriteLine("Matrix R: " + temp.Rows.ToString() + " " + "Matrix C: " +temp.Cols.ToString());                                                   
             return mRandTable;
- 
-
         }
 
+        
+
         // Generate Directed Configuration Models
-        public static Matrix GenerateDirectedConfigModel (bool sign, bool selfties, Matrix modelSpec)
+        public static Matrix GenerateDirectedConfigModel_2 (bool sign, bool selfties, Matrix modelSpec)
         {
             int nodes = modelSpec.Rows;
             int i, j;
             Vector vmin, vmax;
             Vector deg, pos_deg, neg_deg;
-            Matrix m = new Matrix(nodes);
+            Matrix m = new Matrix(nodes, nodes);
             m.Clear();
             vmin = modelSpec.GetColVector(modelSpec.ColLabels["Min"]);
             vmax = modelSpec.GetColVector(modelSpec.ColLabels["Max"]);
@@ -765,17 +979,13 @@ namespace Network.Matrices
 
                     // List<int> edge = null;
                     // List<int> nonedges = null;
-                    for (int k = 0; k < nodes; k++)
+                    for (j = 0; j < nodes; j++)
                     {
-                        if (!selfties && k == i)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            pool.Add(k);
-                        }
+                        if (!selfties || i != j)
+                            pool.Add(j);
                     }
+                    if ((pos_deg[i] + neg_deg[i]) > pool.Count)
+                        throw new Exception("The sum of positive and negative edges should not exceed the number of available ties.");
                     // Configure the positive edges
                     for (int k = 0; k < pos_deg[i]; k++)
                     {
@@ -783,7 +993,7 @@ namespace Network.Matrices
                         _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
 
                         m[i, _col] = (int)RNG.RandomInt(1, vmax[i]);
-                        pos_deg[_col]--;
+                        // pos_deg[i]--;
                         // edge.Add(_col);
                         pool.Remove(_col);
                     }
@@ -795,7 +1005,7 @@ namespace Network.Matrices
                         _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
 
                         m[i, _col] = (-1) * (int)RNG.RandomInt(1, Math.Abs(vmin[i]));
-                        neg_deg[_col]--;
+                        // neg_deg[_col]--;
                         // edge.Add(_col);
                         pool.Remove(_col);
                     }
@@ -815,25 +1025,20 @@ namespace Network.Matrices
 
                     // List<int> edge = null;
                     // List<int> nonedges = null;
-                    for (int k = 0; k < nodes; k++)
+                    for (j = 0; j < nodes; j++)
                     {
-                        if (!selfties && k == i)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            pool.Add(k);
-                        }
+                        if (!selfties || i != j)
+                            pool.Add(j);
                     }
+                    if (deg[i] > pool.Count)
+                        throw new Exception("The number of edges should not exceed that of available ties!");
                     // Configure the positive edges
                     for (int k = 0; k < deg[i]; k++)
                     {
                         int _col;
                         _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-
                         m[i, _col] = (int)RNG.RandomInt(1, vmax[i]);
-                        deg[_col]--;
+                        // deg[_col]--;
                         // edge.Add(_col);
                         pool.Remove(_col);
                     }
@@ -843,7 +1048,7 @@ namespace Network.Matrices
         }
 
         // Generate Undirected Configuration Models (Version 1.0)
-        public static Matrix GenerateUndirectedConfigModel(bool sign, bool selfties, Matrix modelSpec)
+        public static Matrix GenerateUndirectedConfigModel_2 (bool sign, bool selfties, Matrix modelSpec)
         {
             int nodes = modelSpec.Rows;
             int i, j;
@@ -852,8 +1057,8 @@ namespace Network.Matrices
             Vector orig_deg, orig_pos_deg, orig_neg_deg;
             Vector deg, pos_deg, neg_deg;
             List<List<int>> col_pool = new List<List<int>>();
-            List<List<int>> pos_col_pool = new List<List<int>>();
-            List<List<int>> neg_col_pool = new List<List<int>>();
+            // List<List<int>> pos_col_pool = new List<List<int>>();
+            // List<List<int>> neg_col_pool = new List<List<int>>();
             List<int> row_pool = new List<int>();
             // List<int> pos_row_pool = new List<int>();
             // List<int> neg_row_pool = new List<int>();
@@ -882,10 +1087,10 @@ namespace Network.Matrices
                     pos_deg = new Vector(orig_pos_deg);
                     neg_deg = new Vector(orig_neg_deg);
                     deg = pos_deg + neg_deg;
-
+                    m.Clear();
                     col_pool = new List<List<int>>();
-                    pos_col_pool = new List<List<int>>();
-                    neg_col_pool = new List<List<int>>();
+                    // pos_col_pool = new List<List<int>>();
+                    // neg_col_pool = new List<List<int>>();
                     row_pool = new List<int>();
                     
                     // Create row_pools and col_pools
@@ -926,11 +1131,12 @@ namespace Network.Matrices
                             }
                         }
                         _row = maxIndex;
-                        // bool found = false;
+                        
                         while (col_pool[_row].Count > 0)
                         {
+                            bool found = false;
                             _col = col_pool[_row][RNG.RandomInt(col_pool[_row].Count - 1)];
-                            if (pos_deg[_row] >= neg_deg[_row])
+                            if (pos_deg[_row] >= neg_deg[_row] && pos_deg[_row] > 0)
                             {
                                 if (Math.Min(vmax[_row], vmax[_col]) > 0 && pos_deg[_col] > 0)
                                 {
@@ -948,15 +1154,11 @@ namespace Network.Matrices
                                         if (deg[_col] == 0)
                                             row_pool.Remove(_col);
                                     }
-                                    // found = true;
+                                    found = true;
                                     break;
                                 }
-                                else
-                                {
-                                    col_pool[_row].Remove(_col);
-                                }
                             }
-                            else
+                            else if (neg_deg[_row] >= neg_deg[_row] && neg_deg[_row] > 0)
                             {
                                 if (Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])) > 0 && neg_deg[_col] > 0)
                                 {
@@ -974,15 +1176,14 @@ namespace Network.Matrices
                                         if (deg[_col] == 0)
                                             row_pool.Remove(_col);
                                     }
-                                    // found = true;
+                                    found = true;
                                     break;
-                                }
-                                else
-                                {
-                                    col_pool[_row].Remove(_col);
-                                }
+                                }                               
                             }
-
+                            if (found == false)
+                            {
+                                col_pool[_row].Remove(_col);
+                            }
                         }
                         if (deg[_row] == 0 || col_pool[_row].Count == 0)
                         {
@@ -1009,6 +1210,7 @@ namespace Network.Matrices
                     deg = new Vector(orig_deg);
                     col_pool = new List<List<int>>();
                     row_pool = new List<int>();
+                    m.Clear();
                     // Create row_pools and col_pools
                     for (i = 0; i < nodes; i++)
                     {
@@ -1082,19 +1284,18 @@ namespace Network.Matrices
             // return m;
         }
 
-        // Generate Undirected Configuration Models (Version 1.1)
-        public static Matrix GenerateUndirectedConfigModel_Revised(bool sign, bool selfties, Matrix modelSpec)
+        // Generate Directed Configuration Models
+        public static Matrix GenerateDirectedConfigModel(bool sign, bool selfties, Matrix modelSpec, string netId)
         {
             int nodes = modelSpec.Rows;
-            int i;
-            // const int UPPER_BOUND = 200;
+            int i, j;
             Vector vmin, vmax;
             Vector deg, pos_deg, neg_deg;
-
+            Matrix m = new Matrix(nodes, nodes, int.Parse(netId));
+            m.Clear();
             vmin = modelSpec.GetColVector(modelSpec.ColLabels["Min"]);
             vmax = modelSpec.GetColVector(modelSpec.ColLabels["Max"]);
 
-            Matrix m = new Matrix(nodes);
 
             if (sign)
             {
@@ -1102,424 +1303,395 @@ namespace Network.Matrices
                 neg_deg = modelSpec.GetColVector(modelSpec.ColLabels["Neg. Degree"]);
                 deg = pos_deg + neg_deg;
 
-                // Sort pos_deg in descending order
-                List<int> pos_deg_list = new List<int>();
-                for (int k = 0; k < nodes; k++)
+                for (i = 0; i < nodes; i++)
                 {
-                    pos_deg_list.Add((int)pos_deg[k]);
-                }
-                List<int> sorted_pos_deg_list = new List<int>(pos_deg_list);
-                List<int> sorted_pos_index = new List<int>();
-                sorted_pos_deg_list.Sort();
-                sorted_pos_deg_list.Reverse(); // Sort the array of degrees in descending order
-                for (int k = 0; k < nodes; k++)
-                {
-                    int temp = pos_deg_list.FindIndex(y => y == sorted_pos_deg_list[k]); // The original row index
-                    sorted_pos_index.Add(temp);
-                    pos_deg_list[temp] = -1;
-                }
-                Vector orig_pos_deg = new Vector(pos_deg);
-                pos_deg.Clear();
-                pos_deg = new Vector(sorted_pos_deg_list.ToArray());
 
-                // Sort neg_deg in descending order
-                List<int> neg_deg_list = new List<int>();
-                for (int k = 0; k < nodes; k++)
-                {
-                    neg_deg_list.Add((int)neg_deg[k]);
+                    List<int> pool = new List<int>();
+
+                    // List<int> edge = null;
+                    // List<int> nonedges = null;
+                    for (j = 0; j < nodes; j++)
+                    {
+                        if (!selfties || i != j)
+                            pool.Add(j);
+                    }
+
+                    // Configure the positive edges
+                    int v;
+                    while(pos_deg[i] > 0)
+                    {
+                        int _col;
+                        _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
+
+                        while (true)
+                        {
+                            v = (int)RNG.RandomInt(1, Math.Min(pos_deg[i], vmax[i]));
+                            if ((pos_deg[i] - v) < vmax[i] * (pool.Count - 1))
+                                break;
+                        }
+                        m[i, _col] = v;
+                        pos_deg[i] -= v;
+                        // edge.Add(_col);
+                        pool.Remove(_col);
+                    }
+
+                    // Configure the negative edges
+                    while(neg_deg[i] > 0)
+                    {
+                        int _col;
+                        _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
+                        while (true)
+                        {
+                            v = (-1) * (int)RNG.RandomInt(1, Math.Min(neg_deg[i], Math.Abs(vmin[i])));
+                            if ((neg_deg[i] + v) < Math.Abs(vmin[i]) * (pool.Count - 1))
+                                break;
+                        }
+                        m[i, _col] = v;
+                        neg_deg[i] += v;
+                        // edge.Add(_col);
+                        pool.Remove(_col);
+                    }
                 }
-                List<int> sorted_neg_deg_list = new List<int>(neg_deg_list);
-                List<int> sorted_neg_index = new List<int>();
-                sorted_neg_deg_list.Sort();
-                sorted_neg_deg_list.Reverse(); // Sort the array of degrees in descending order
-                for (int k = 0; k < nodes; k++)
+
+            }
+
+            else
+            {
+
+                deg = modelSpec.GetColVector(modelSpec.ColLabels["Degree"]);
+
+                for (i = 0; i < nodes; i++)
                 {
-                    int temp = neg_deg_list.FindIndex(y => y == sorted_neg_deg_list[k]); // The original row index
-                    sorted_neg_index.Add(temp);
-                    neg_deg_list[temp] = -1;
+
+                    List<int> pool = new List<int>();
+
+                    // List<int> edge = null;
+                    // List<int> nonedges = null;
+                    for (j = 0; j < nodes; j++)
+                    {
+                        if (!selfties || i != j)
+                            pool.Add(j);
+                    }
+                    //if (deg[i] > pool.Count)
+                    //    throw new Exception("The number of edges should not exceed that of available ties!");
+                    // Configure the positive edges
+                    while(deg[i] > 0 && pool.Count > 0)
+                    {
+                        int v;
+                        int _col;
+                        _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
+                        while (true)
+                        {
+                            v = (int)RNG.RandomInt(1, Math.Min(deg[i], vmax[i]));
+                            if ((deg[i] - v) < vmax[i] * (pool.Count - 1))
+                                break;
+                        }
+                        m[i, _col] = v;
+                        deg[i] -= v ;
+                        // edge.Add(_col);
+                        pool.Remove(_col);
+                    }
                 }
-                Vector orig_neg_deg = new Vector(neg_deg);
-                neg_deg.Clear();
-                neg_deg = new Vector(sorted_neg_deg_list.ToArray());
+            }
+            return m;
+        }
+
+        // Generate Undirected Configuration Models (Version 1.0)
+        public static Matrix GenerateUndirectedConfigModel(bool sign, bool selfties, Matrix modelSpec, string netId)
+        {
+            int nodes = modelSpec.Rows;
+            int i, j;
+            // const int UPPER_BOUND = 200;
+            Vector vmin, vmax;
+            Vector orig_deg, orig_pos_deg, orig_neg_deg;
+            Vector deg, pos_deg, neg_deg;
+            List<List<int>> col_pool = new List<List<int>>();
+            // List<List<int>> pos_col_pool = new List<List<int>>();
+            // List<List<int>> neg_col_pool = new List<List<int>>();
+            List<int> row_pool = new List<int>();
+            // List<int> pos_row_pool = new List<int>();
+            // List<int> neg_row_pool = new List<int>();
+            Matrix m = new Matrix(nodes, nodes, int.Parse(netId));
 
 
-                if (selfties)
+            vmin = modelSpec.GetColVector(modelSpec.ColLabels["Min"]);
+            vmax = modelSpec.GetColVector(modelSpec.ColLabels["Max"]);
+
+
+            if (sign)
+            {
+                orig_pos_deg = modelSpec.GetColVector(modelSpec.ColLabels["Pos. Degree"]);
+                orig_neg_deg = modelSpec.GetColVector(modelSpec.ColLabels["Neg. Degree"]);
+                if (!selfties && orig_pos_deg.sum() % 2 != 0)
                 {
+                    throw new Exception("The sum of the positive degrees is not even!");
+                }
+                if (!selfties && orig_neg_deg.sum() % 2 != 0)
+                {
+                    throw new Exception("The sum of the negative degrees is not even!");
+                }
+                int loop = 0;
+                while (true)
+                {
+                    pos_deg = new Vector(orig_pos_deg);
+                    neg_deg = new Vector(orig_neg_deg);
+                    deg = pos_deg + neg_deg;
+                    m.Clear();
+                    col_pool = new List<List<int>>();
+                    // pos_col_pool = new List<List<int>>();
+                    // neg_col_pool = new List<List<int>>();
+                    row_pool = new List<int>();
+
+                    // Create row_pools and col_pools
                     for (i = 0; i < nodes; i++)
                     {
-                        List<int> pool = new List<int>();
-                        int _row = sorted_pos_index[i];
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i; k < nodes; k++)
+                        col_pool.Add(new List<int>());
+                        // neg_col_pool.Add(new List<int>());
+                        if (deg[i] > 0)
                         {
-                            pool.Add(sorted_pos_index[k]);
-                        }
-                        // Configure the positive edges
-                        if (pool.Count >= pos_deg[i])
-                        {
-                            for (int k = 0; k < pos_deg[i]; k++)
+                            row_pool.Add(i);
+                            //if (pos_deg[i] > 0)
+                            //{
+                            //    pos_row_pool.Add(i);
+                            //}
+                            //if (neg_deg[i] > 0)
+                            //{
+                            //    neg_row_pool.Add(i);
+                            //}
+                            for (j = 0; j < nodes; j++)
                             {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
-                                {
-                                    int vtemp;
-                                    int _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    int temp_col = sorted_pos_index.FindIndex(x => x == _col);
-                                    if (Math.Min(vmax[_row], vmax[_col]) > 0 && pos_deg[temp_col] > 0)
-                                    {
-                                        vtemp = (int)RNG.RandomInt(1, Math.Min(vmax[_row], vmax[_col]));
-                                        m[_col, _row] = m[_row, _col] = vtemp;
-                                        pos_deg[temp_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-                                if (found == false)
-                                {
-                                    Console.WriteLine("Row: " + i.ToString() + " " + "Loop: " + loop.ToString());
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
-                                }
+                                if (selfties || i != j)
+                                    col_pool[i].Add(j);
                             }
                         }
-                        else
-                        {
-                            Console.WriteLine("pool.Count: " + pool.Count.ToString() + " " + "row: " + i.ToString() + " deg[row]: " + pos_deg[i].ToString());
-                            throw new Exception("Failed to generate a valid configuration with the input positive degrees");
-                        }
                     }
-                    for (i = 0; i < nodes; i++)
+                    int _row, _col;
+                    while (row_pool.Count > 0 && deg.sum() > 0)
                     {
-                        List<int> pool = new List<int>();
-                        int _row = sorted_neg_index[i];
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i; k < nodes; k++)
+                        //_row = row_pool[RNG.RandomInt(row_pool.Count - 1)];
+                        int temp = 0;
+                        int maxIndex = 0;
+                        for (int k = 0; k < nodes; k++)
                         {
-                            if (m[_row, k] == 0)
+                            if (deg[k] > temp && row_pool.Exists(x => x == k))
                             {
-                                pool.Add(sorted_neg_index[k]);
+                                temp = (int)deg[k];
+                                maxIndex = k;
                             }
                         }
-                        // Configure the negative edges
-                        if (pool.Count >= neg_deg[i])
-                        {
-                            for (int k = 0; k < neg_deg[i]; k++)
-                            {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
-                                {
-                                    int vtemp;
-                                    int _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    int temp_col = sorted_neg_index.FindIndex(x => x == _col);
-                                    if (Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])) > 0 && neg_deg[temp_col] > 0)
-                                    {
-                                        vtemp = (-1) * (int)RNG.RandomInt(1, Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])));
-                                        m[_col, _row] = m[_row, _col] = vtemp;
-                                        neg_deg[temp_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-                                if (found == false)
-                                {
-                                    Console.WriteLine("Row: " + i.ToString() + " " + "Loop: " + loop.ToString());
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("pool.Count: " + pool.Count.ToString() + " " + "row: " + i.ToString() + " deg[row]: " + neg_deg[i].ToString());
-                            throw new Exception("Failed to generate a valid configuration with the input negative degrees");
-                        }
-                    }
-                }
-                else
-                {
-                    if (pos_deg.sum() % 2 != 0)
-                    {
-                        throw new Exception("The sum of the positive degrees is not even!");
-                    }
-                    if (neg_deg.sum() % 2 != 0)
-                    {
-                        throw new Exception("The sum of the negative degrees is not even!");
-                    }
-                    for (i = 0; i < (nodes - 1); i++)
-                    {
-                        List<int> pool = new List<int>();
-                        int _row = sorted_pos_deg_list[i];
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i + 1; k < nodes; k++)
-                        {
-                            pool.Add(sorted_pos_deg_list[k]);
-                        }
+                        _row = maxIndex;
 
-                        // Configure the positive edges
-                        if (pool.Count >= pos_deg[i])
+                        while (col_pool[_row].Count > 0)
                         {
-                            for (int k = 0; k < pos_deg[i]; k++)
+                            int v;
+                            bool found = false;
+                            _col = col_pool[_row][RNG.RandomInt(col_pool[_row].Count - 1)];
+                            if (pos_deg[_row] >= neg_deg[_row] && pos_deg[_row] > 0)
                             {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
+                                if (Math.Min(vmax[_row], vmax[_col]) > 0 && pos_deg[_col] > 0)
                                 {
-                                    int vtemp;
-                                    int _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    int temp_col = sorted_pos_deg_list.FindIndex(x => x == _col);
-                                    if (Math.Min(vmax[_row], vmax[_col]) > 0 && pos_deg[_col] > 0)
+                                    int edge_lim_1 = (_col == _row) ? (int)pos_deg[_row] : (int)Math.Min(pos_deg[_row], pos_deg[_col]); // Upper bound by edge sum
+                                    int edge_lim_2 = (_col == _row) ? (int)vmax[_row] : (int)Math.Min(vmax[_row], vmax[_col]); // Upper bound by maximum value
+
+                                    int lim = (int)Math.Min(edge_lim_1, edge_lim_2);
+
+                                    //if (((pos_deg[_row] - lim) > vmax[_row] * (col_pool[_row].Count - 1)) || ((pos_deg[_col] - lim) > vmax[_col] * (col_pool[_col].Count - 1)))
+                                    //{
+                                    //    col_pool[_row].Remove(_col);
+                                    //    continue;
+                                    //}
+
+                                    //while (true)
+                                    //{
+                                    //    v = (int)RNG.RandomInt(1, Math.Min(edge_lim_1, edge_lim_2));
+                                    //    if (((pos_deg[_row] - v) <= vmax[_row] * (col_pool[_row].Count - 1)) && ((pos_deg[_col] - v) <= vmax[_col] * (col_pool[_col].Count - 1)))
+                                    //        break;
+                                    //}
+                                    v = (int)RNG.RandomInt(1, Math.Min(edge_lim_1, edge_lim_2));
+                                    m[_col, _row] = m[_row, _col] = v;
+
+                                    if (_col != _row)
                                     {
-                                        vtemp = (int)RNG.RandomInt(1, Math.Min(vmax[_row], vmax[_col]));
-                                        m[_col, _row] = m[_row, _col] = vtemp;
-                                        pos_deg[temp_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
+                                        col_pool[_col].Remove(_row);
+                                        pos_deg[_col] -= v;
+                                        deg[_col] -= v;
+                                        if (deg[_col] == 0)
+                                            row_pool.Remove(_col);
                                     }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-                                if (found == false)
-                                {
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
+
+                                    col_pool[_row].Remove(_col);
+                                    pos_deg[_row] -= v;
+                                    deg[_row] -= v;
+
+                                    found = true;
+                                    break;
                                 }
                             }
+
+                            else if (neg_deg[_row] > pos_deg[_row] && neg_deg[_row] > 0)
+                            {
+                                if (Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])) > 0 && neg_deg[_col] > 0)
+                                {
+                                    int edge_lim_1 = (_col == _row) ? (int)neg_deg[_row] : (int)Math.Min(neg_deg[_row], neg_deg[_col]); // Upper bound by edge sum
+                                    int edge_lim_2 = (_col == _row) ? (int)Math.Abs(vmin[_row]) : (int)Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])); // Upper bound by maximum value
+
+                                    int lim = (int)Math.Min(edge_lim_1, edge_lim_2);
+
+                                    //if (((neg_deg[_row] - lim) > Math.Abs(vmin[_row]) * (col_pool[_row].Count - 1)) || ((neg_deg[_col] - lim) > Math.Abs(vmin[_col]) * (col_pool[_col].Count - 1)))
+                                    //{
+                                    //    col_pool[_row].Remove(_col);
+                                    //    continue;
+                                    //}
+
+                                    //while (true)
+                                    //{
+                                    //    v = (-1) * (int)RNG.RandomInt(1, Math.Min(edge_lim_1, edge_lim_2));
+                                    //    if (((neg_deg[_row] + v) <= Math.Abs(vmin[_row]) * (col_pool[_row].Count - 1)) && ((neg_deg[_col] + v) <= Math.Abs(vmin[_col]) * (col_pool[_col].Count - 1)))
+                                    //        break;
+                                    //}
+
+                                    v = (-1) * (int)RNG.RandomInt(1, Math.Min(edge_lim_1, edge_lim_2));
+                                    m[_col, _row] = m[_row, _col] = v;
+
+                                    if (_col != _row)
+                                    {
+                                        col_pool[_col].Remove(_row);
+                                        neg_deg[_col] += v;
+                                        deg[_col] += v;
+                                        if (deg[_col] == 0)
+                                            row_pool.Remove(_col);
+                                    }
+
+                                    col_pool[_row].Remove(_col);
+                                    neg_deg[_row] += v;
+                                    deg[_row] += v;
+
+                                    found = true;
+                                    break;
+                                }
+                            }
+                                                       
+                            if (found == false)
+                            {
+                                col_pool[_row].Remove(_col);
+                            }
                         }
-                        else
+                        if (deg[_row] == 0 || col_pool[_row].Count == 0)
                         {
-                            throw new Exception("Failed to generate a valid configuration with the input positive degrees");
+                            row_pool.Remove(_row);
                         }
                     }
-                    for (i = 0; i < (nodes - 1); i++)
+                    if (deg.sum() == 0)
                     {
-                        List<int> pool = new List<int>();
-                        int _row = sorted_neg_index[i];
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i + 1; k < nodes; k++)
-                        {
-                            if (m[_row, k] == 0)
-                            {
-                                pool.Add(sorted_neg_index[k]);
-                            }
-                        }
-                        // Configure the negative edges
-                        if (pool.Count >= neg_deg[i])
-                        {
-                            for (int k = 0; k < neg_deg[i]; k++)
-                            {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
-                                {
-                                    int vtemp;
-                                    int _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    int temp_col = sorted_neg_index.FindIndex(x => x == _col);
-                                    if (Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])) > 0 && neg_deg[temp_col] > 0)
-                                    {
-                                        vtemp = (-1) * (int)RNG.RandomInt(1, Math.Min(Math.Abs(vmin[_row]), Math.Abs(vmin[_col])));
-                                        m[_col, _row] = m[_row, _col] = vtemp;
-                                        neg_deg[temp_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-                                if (found == false)
-                                {
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            throw new Exception("Failed to generate a valid configuration with the input negative degrees");
-                        }
+                        // Console.WriteLine("The number of loop is " + loop.ToString());
+                        return m;
                     }
+                    loop++;
                 }
             }
             else
             {
-                deg = modelSpec.GetColVector(0);
-                List<int> deg_list = new List<int>();
-                for (int k = 0; k < nodes; k++)
+                orig_deg = modelSpec.GetColVector(modelSpec.ColLabels["Degree"]);
+                if (!selfties && orig_deg.sum() % 2 != 0)
                 {
-                    deg_list.Add((int)deg[k]);
+                    throw new Exception("The sum of the degrees is not even!");
                 }
-                List<int> sorted_deg_list = new List<int>(deg_list);
-                List<int> sorted_index = new List<int>();
-                sorted_deg_list.Sort();
-                sorted_deg_list.Reverse(); // Sort the array of degrees in descending order
-                for (int k = 0; k < nodes; k++)
+                int loop = 0;
+                while (true)
                 {
-                    int temp = deg_list.FindIndex(y => y == sorted_deg_list[k]); // The original row index
-                    sorted_index.Add(temp);
-                    deg_list[temp] = -1;
-                }
-                Vector orig_deg = new Vector(deg);
-                deg.Clear();
-                deg = new Vector(sorted_deg_list.ToArray());
-
-                // Matrix temp_m = new Matrix(nodes);
-                if (selfties)
-                {
-
+                    deg = new Vector(orig_deg);
+                    col_pool = new List<List<int>>();
+                    row_pool = new List<int>();
+                    m.Clear();
+                    // Create row_pools and col_pools
                     for (i = 0; i < nodes; i++)
                     {
-                        List<int> pool = new List<int>();
-                        int _row = sorted_index[i];
-                        // Console.WriteLine("Row: " + i.ToString() + " Degree: " + deg[i].ToString());
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
+                        col_pool.Add(new List<int>());
+                        // neg_col_pool.Add(new List<int>());
+                        if (deg[i] > 0)
+                        {
+                            row_pool.Add(i);
+                            for (j = 0; j < nodes; j++)
+                            {
+                                if (selfties || i != j)
+                                    col_pool[i].Add(j);
+                            }
+                        }
+                    }
+                    int _row, _col;
+                    while (row_pool.Count > 0 && deg.sum() > 0)
+                    {
+                        // _row = row_pool[RNG.RandomInt(row_pool.Count - 1)];
+                        int temp = 0;
+                        int maxIndex = 0;
                         for (int k = 0; k < nodes; k++)
                         {
-                            pool.Add(k);
-                        }
-                        for (int k = 0; k < i; k++)
-                        {
-                            pool.Remove(sorted_index[k]);
-                        }
-                        // Console.WriteLine(pool.Count.ToString());
-                        // Configure the edges
-                        if (pool.Count >= deg[i])
-                        {
-                            for (int k = 0; k < deg[i]; k++)
+                            if (deg[k] > temp && row_pool.Exists(x => x == k))
                             {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
-                                {
-                                    // Console.WriteLine(loop.ToString());
-                                    int vtemp;
-                                    int _col = pool[RNG.RandomInt(pool.Count - 1)];
-                                    int temp_col = sorted_index.FindIndex(x => x == _col);
-                                    if (Math.Min(vmax[_row], vmax[_col]) > 0 && deg[temp_col] > 0)
-                                    {
-                                        vtemp = (int)RNG.RandomInt(1, Math.Min(vmax[_row], vmax[_col]));
-                                        m[_col, _row] = m[_row, _col] = vtemp;
-                                        // Console.WriteLine(deg[_col].ToString());
-                                        deg[temp_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
-                                }
-
-                                // Console.WriteLine(loop.ToString());
-                                if (found == false)
-                                {
-                                    // Console.WriteLine("Row: " + i.ToString() + " " + "Loop: " + loop.ToString());
-
-                                    throw new Exception("Failed to find a valied configuration within the limit of loops.");
-                                }
+                                temp = (int)deg[k];
+                                maxIndex = k;
                             }
                         }
-                        else
+                        _row = maxIndex;
+                        int v;
+                        // bool found = false;
+                        while (col_pool[_row].Count > 0)
                         {
-                            // Console.WriteLine("pool.Count: " + pool.Count.ToString() + " " + "row: " + i.ToString() + " deg[row]: " + deg[i].ToString());
-                            throw new Exception("Failed to generate a valid configuration with the input degrees");
-                        }
-                    }
-                }
-                else
-                {
-                    if (deg.sum() % 2 != 0)
-                    {
-                        throw new Exception("The sum of degrees is not even!");
-                    }
-                    for (i = 0; i < (nodes - 1); i++)
-                    {
-                        List<int> pool = new List<int>();
-                        int _row = sorted_index[i];
-                        // List<int> edge = null;
-                        // List<int> nonedges = null;
-                        for (int k = i+1; k < nodes; k++)
-                        {
-                            pool.Add(sorted_index[k]);
-                        }
+                            _col = col_pool[_row][RNG.RandomInt(col_pool[_row].Count - 1)];
 
-                        // Configure the edges
-                        if (pool.Count >= deg[i])
-                        {
-                            for (int k = 0; k < deg[i]; k++)
-                            {
-                                int loop = 0;
-                                bool found = false;
-                                while (pool.Count > 0)
+                            if (Math.Min(vmax[_row], vmax[_col]) > 0 && deg[_col] > 0)
+                            {                               
+                                int edge_lim_1 = (_col == _row) ? (int)deg[_row] : (int)Math.Min(deg[_row], deg[_col]);
+                                int edge_lim_2 = (_col == _row) ? (int)vmax[_row] : (int)Math.Min(vmax[_row], vmax[_col]);
+                                v = (int)Math.Min(edge_lim_1, edge_lim_2);
+                                if (((deg[_row] - v) > vmax[_row] * (col_pool[_row].Count - 1)) || ((deg[_col] - v) > vmax[_col] * (col_pool[_col].Count - 1)))
                                 {
-                                    int vtemp;
-                                    int _col = pool[(int)RNG.RandomInt(pool.Count - 1)];
-                                    int temp_col = sorted_index.FindIndex(x => x == _col);
-                                    if (Math.Min(vmax[_row], vmax[_col]) > 0 && deg[temp_col] > 0)
-                                    {
-                                        vtemp = (int)RNG.RandomInt(1, Math.Min(vmax[_row], vmax[_col]));
-                                        m[_col, _row] = m[_row, _col] = vtemp;
-                                        deg[temp_col]--;
-                                        // edge.Add(_col);
-                                        pool.Remove(_col);
-                                        found = true;
+                                    col_pool[_row].Remove(_col);
+                                    continue;
+                                }
+
+                                while (true)
+                                {
+                                    v = (int)RNG.RandomInt(1, Math.Min(edge_lim_1, edge_lim_2));
+                                    if (((deg[_row] - v) <= vmax[_row] * (col_pool[_row].Count - 1)) && ((deg[_col] - v) <= vmax[_col] * (col_pool[_col].Count - 1)))
                                         break;
-                                    }
-                                    else
-                                    {
-                                        // nonedges.Add(_col);
-                                        pool.Remove(_col);
-                                    }
-                                    loop++;
                                 }
-                                if (found == false)
+
+                                // v = (int)RNG.RandomInt(1, Math.Min(edge_lim_1, edge_lim_2));
+                                m[_col, _row] = m[_row, _col] = v;
+                                col_pool[_row].Remove(_col);
+                                deg[_row] -= v;
+
+                                if (_col != _row)
                                 {
-                                    //throw new Exception("Failed to find a valied configuration within the limit of loops.");
+                                    col_pool[_col].Remove(_row);
+                                    deg[_col] -= v;
+                                    if (deg[_col] == 0)
+                                        row_pool.Remove(_col);
                                 }
+                                // found = true;
+                                break;
+                            }
+                            else
+                            {
+                                col_pool[_row].Remove(_col);
                             }
                         }
-                        else
+                        if (deg[_row] == 0 || col_pool[_row].Count == 0)
                         {
-                            throw new Exception("Failed to generate a valid configuration with the input degrees");
+                            row_pool.Remove(_row);
                         }
                     }
+                    if (deg.sum() == 0)
+                    {
+                        // throw new Exception("Failed to find a valid configuration with the input degrees!");
+                        // Console.WriteLine("The numer of loop is " + loop.ToString());
+                        return m;
+                    }
+                    loop++;
                 }
             }
-
-            return m;
+            // return m;
         }
 
         // Load Configuration Model 
@@ -1534,11 +1706,11 @@ namespace Network.Matrices
                 for (int i = 0; i < n; i++)
                 {   if (directed)
                     {
-                        mRandTable[net_ID].Add(GenerateDirectedConfigModel(sign, selfties, modelSpec));
+                        mRandTable[net_ID].Add(GenerateDirectedConfigModel(sign, selfties, modelSpec, net_ID));
                     }
                     else
                     {
-                        mRandTable[net_ID].Add(GenerateUndirectedConfigModel(sign, selfties, modelSpec));
+                        mRandTable[net_ID].Add(GenerateUndirectedConfigModel(sign, selfties, modelSpec, net_ID));
                     }
                 }
             }

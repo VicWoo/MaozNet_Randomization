@@ -4240,6 +4240,17 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     {
                         net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);
                     }
+                    // Yushan
+                    else if (loadFrom == "GlobalRandom")
+                    {
+                        net.LoadGlobalRandom(mRandList, displayMatrix, year);
+                    }
+                    else if (loadFrom == "ConfigModel")
+                    {
+                        net.LoadConfigModel(mRandList, displayMatrix, year);
+                    }
+                    //
+
                     progress.curYear = year;
                     Application.DoEvents();
                     previousYear = year;
@@ -4294,6 +4305,14 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                         // net.SaveAsTableToFile(saveFileDialog.FileName, year == startYear, _optionsForm.SaveOverwrite && year == startYear, displayMatrix,year, endYear);
                         return;
                     }
+                    //Yushan
+                    else if (displayMatrix == "Data" && (loadFrom == "GlobalRandom" || loadFrom == "ConfigModel"))
+                    {
+                        communityType = CommunityType.Char;
+                        currentYear = year;
+                        LoadData();
+                    }
+                    //
                     else
                     {
                         throw new Exception("Cannot save " + displayMatrix.ToString() + " matrix as a Table format");

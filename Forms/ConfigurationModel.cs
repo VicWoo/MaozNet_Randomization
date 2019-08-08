@@ -124,7 +124,7 @@ namespace NetworkGUI
                 foreach (KeyValuePair<int, Dictionary<string, List<int>>> kvp in networkSpec)
                 {
                     int temp_node = 0;
-                    int edges = 0;
+                    // int edges = 0;
                     nodes[counter] = kvp.Value["Pos. Degree"].Count;
                     temp_node = nodes[counter++];
                     // Constraints on degrees: Each node cannot have a degree larger than the total number of nodes
@@ -134,15 +134,15 @@ namespace NetworkGUI
                     {
                         for (i = 0; i < temp_node; i++)
                         {
-                            if ((kvp.Value["Pos. Degree"][i] + kvp.Value["Neg. Degree"][i]) > temp_node)
+                            if (Math.Ceiling((double)kvp.Value["Pos. Degree"][i] / (kvp.Value["Max"][i] == 0 ? 1 : kvp.Value["Max"][i])) + Math.Ceiling((double)kvp.Value["Neg. Degree"][i] / (kvp.Value["Min"][i] == 0 ? 1 : Math.Abs(kvp.Value["Min"][i]))) > temp_node)
                             {
                                 throw new Exception("Degree of the node in Network is out of range!");
                             }
 
-                            else
-                            {
-                                edges += kvp.Value["Pos. Degree"][i] + kvp.Value["Neg. Degree"][i];
-                            }
+                            //else
+                            //{
+                            //    edges += kvp.Value["Pos. Degree"][i] + kvp.Value["Neg. Degree"][i];
+                            //}
                         }
                     }
                     // For unselftied case, the total degree can only be as many as (nodes[i] - 1).
@@ -150,22 +150,22 @@ namespace NetworkGUI
                     {
                         for (i = 0; i < temp_node; i++)
                         {
-                            if (!selfTies && (kvp.Value["Pos. Degree"][i] + kvp.Value["Neg. Degree"][i]) > (temp_node - 1))
+                            if (Math.Ceiling((double)kvp.Value["Pos. Degree"][i]/(kvp.Value["Max"][i]==0?1: kvp.Value["Max"][i]))  + Math.Ceiling((double)kvp.Value["Neg. Degree"][i]/ (kvp.Value["Min"][i] == 0 ? 1 : Math.Abs(kvp.Value["Min"][i]))) > (temp_node - 1))
                             {
                                 throw new Exception("Degree of the node in Network is out of range!");
                             }
-                            else
-                            {
-                                edges += kvp.Value["Pos. Degree"][i] + kvp.Value["Neg. Degree"][i];
-                            }
+                            //else
+                            //{
+                            //    edges += kvp.Value["Pos. Degree"][i] + kvp.Value["Neg. Degree"][i];
+                            //}
                         }
                     }
 
-                    // Constraint the total number of edges according to the given type of networks
-                    if (!(((selfTies == false) && (edges <= (temp_node * temp_node - temp_node))) ^ ((selfTies == true) && (edges <= temp_node * temp_node))))
-                    {
-                        throw new Exception("The number of edges is out of range!");
-                    }
+                    //// Constraint the total number of edges according to the given type of networks
+                    //if (!(((selfTies == false) && (edges <= (temp_node * temp_node - temp_node))) ^ ((selfTies == true) && (edges <= temp_node * temp_node))))
+                    //{
+                    //    throw new Exception("The number of edges is out of range!");
+                    //}
 
                 }
             }
@@ -228,7 +228,7 @@ namespace NetworkGUI
                     {
                         for (i = 0; i < temp_node; i++)
                         {
-                            if (kvp.Value["Degree"][i] > temp_node)
+                            if (kvp.Value["Degree"][i] > (kvp.Value["Max"][i] * temp_node))
                             {
                                 throw new Exception("Degree of the node in Network is out of range!");
                             }
@@ -238,7 +238,7 @@ namespace NetworkGUI
                     {
                         for (i = 0; i < temp_node; i++)
                         {
-                            if (kvp.Value["Degree"][i] > (temp_node - 1))
+                            if (kvp.Value["Degree"][i] > (kvp.Value["Max"][i] * (temp_node - 1)))
                             {
                                 throw new Exception("Degree of the node in Network is out of range!");
                             }

@@ -73,9 +73,9 @@ namespace NetworkGUI
                     var items = reader.ReadLine().Split(',');
                     if (int.TryParse(items[0], out net_ID) && int.TryParse(items[1], out nodes) && int.TryParse(items[2], out pos_edges) && int.TryParse(items[3], out neg_edges) && int.TryParse(items[4], out min_val) && int.TryParse(items[5], out max_val))
                     {
-                        if ((net_ID > 0) && (nodes > 0) && (pos_edges > 0) && (neg_edges > 0) && (min_val < 0) && (max_val > 0))
+                        if ((net_ID > 0) && (nodes > 0) && (((pos_edges > 0) && (max_val > 0)) || ((pos_edges == 0) && (max_val == 0))) && (((neg_edges > 0) && (min_val < 0)) || ((neg_edges == 0) && (min_val == 0))))
                         {
-                            if ((selfTies == false) && ((pos_edges + neg_edges) <= (nodes * nodes - nodes)))
+                            if ((selfTies == false) && ((Math.Ceiling((double)pos_edges/((max_val == 0)? 1:max_val)) + Math.Ceiling((double)neg_edges / ((min_val == 0) ? 1 : Math.Abs(min_val)))) <= (nodes * nodes - nodes)))
                             {
                                 networkSpec[i].Add("Network ID", net_ID);
                                 networkSpec[i].Add("Nodes", nodes);
@@ -85,7 +85,7 @@ namespace NetworkGUI
                                 networkSpec[i].Add("Max Value", max_val);
                                 i++;
                             }
-                            else if ((selfTies == true) && ((pos_edges + neg_edges) <= nodes * nodes))
+                            else if ((selfTies == true) && (((Math.Ceiling((double)pos_edges / ((max_val == 0) ? 1 : max_val)) + Math.Ceiling((double)neg_edges / ((min_val == 0) ? 1 : Math.Abs(min_val)))) <= nodes * nodes)))
                             {
                                 networkSpec[i].Add("Network ID", net_ID);
                                 networkSpec[i].Add("Nodes", nodes);
@@ -116,9 +116,9 @@ namespace NetworkGUI
                     var items = reader.ReadLine().Split(',');
                     if (int.TryParse(items[0], out net_ID) && int.TryParse(items[1], out nodes) && int.TryParse(items[2], out edges) && int.TryParse(items[3], out min_val) && int.TryParse(items[4], out max_val))
                     {
-                        if ((net_ID > 0) && (nodes > 0) && (edges >= 0) && (min_val == 0) && (max_val > 0))
+                        if ((net_ID > 0) && (nodes > 0) && (((edges > 0) && (max_val > 0)) || ((edges == 0) && (max_val == 0))))
                         {
-                            if ((selfTies == false) && (edges <= (nodes * nodes - nodes)))
+                            if ((selfTies == false) && (Math.Ceiling((double)edges/(max_val == 0 ? 1 : max_val)) <= (nodes * nodes - nodes)))
                             {
                                 networkSpec[i].Add("Network ID", net_ID);
                                 networkSpec[i].Add("Nodes", nodes);
@@ -127,7 +127,7 @@ namespace NetworkGUI
                                 networkSpec[i].Add("Max Value", max_val);
                                 i++;
                             }
-                            else if ((selfTies == true) && (edges <= nodes * nodes))
+                            else if ((selfTies == true) && (Math.Ceiling((double)edges / (max_val == 0 ? 1 : max_val)) <= nodes * nodes))
                             {
                                 networkSpec[i].Add("Network ID", net_ID);
                                 networkSpec[i].Add("Nodes", nodes);
