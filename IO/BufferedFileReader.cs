@@ -17,6 +17,9 @@ namespace Network.IO
         private readonly int _bufferSize;
         private readonly List<string> _lines;
         private readonly NetworkIdTable _networkIdTable;
+        // Yushan
+        private readonly NetworkIdTableAlt _networkIdTableAlt;
+        //
         private readonly BufferedStream _stream;
         private Type _type;
 

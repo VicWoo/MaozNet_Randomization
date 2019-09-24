@@ -8,6 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Network.Matrices;
+using Network.IO;
+using Network;
 
 namespace NetworkGUI
 {
@@ -46,109 +49,230 @@ namespace NetworkGUI
             set;
         }
 
-        public List<Dictionary<string, int>> loadFromInputFile(string inputFile, bool sign, bool selfTies)
+        public struct RandomNetwork
         {
-          
+            private int nodes, edge, posEdg, negEdg, min_val, max_val;
+            private string networkId;
+            public string NetworkId
+            {
+                get
+                {
+                    return networkId;
+                }
+                set
+                {
+                    networkId = value;
+                }
+            }
+            public int Edge
+            {
+                get
+                {
+                    return edge;
+                }
+                set
+                {
+                    edge = value;
+                }
+            }
+            public int PosEdg
+            {
+                get
+                {
+                    return posEdg;
+                }
+                set
+                {
+                    posEdg = value;
+                }
+            }
+            public int NegEdg
+            {
+                get
+                {
+                    return negEdg;
+                }
+                set
+                {
+                    negEdg = value;
+                }
+            }
+            public int Min
+            {
+                get
+                {
+                    return min_val;
+                }
+                set
+                {
+                    min_val = value;
+                }
+            }
+            public int Max
+            {
+                get
+                {
+                    return max_val;
+                }
+                set
+                {
+                    max_val = value;
+                }
+            }
+            public int Nodes
+            {
+                get
+                {
+                    return nodes;
+                }
+                set
+                {
+                    nodes = value;
+                }
+            }
+        }
+        public MatrixTable loadFromInputFile(string inputFile, bool sign, bool selfTies)
+        {
+
             string filename = inputFile;
-            List<Dictionary<string, int>> networkSpec = new List<Dictionary<string, int>>();
+            // List<Dictionary<string, int>> networkSpec = new List<Dictionary<string, int>>();
+            Dictionary<string, RandomNetwork> networkSpec = new Dictionary<string, RandomNetwork>();
             // Unsigned should have 5 cols, while signed 6 cols
             var reader = new StreamReader(filename);
             var headers = reader.ReadLine().Split(',');
             int num_items = headers.Length;
 
-            
-            int net_ID;
+
+            string net_ID;
             int nodes;
             int edges;
             int pos_edges;
             int neg_edges;
             int min_val;
             int max_val;
-            int i = 0;
             if (sign == true && num_items == 6)
             {
-                while(!reader.EndOfStream)
-                {                    
-                    networkSpec.Add(new Dictionary<string, int>());
-                    var items = reader.ReadLine().Split(',');
-                    if (int.TryParse(items[0], out net_ID) && int.TryParse(items[1], out nodes) && int.TryParse(items[2], out pos_edges) && int.TryParse(items[3], out neg_edges) && int.TryParse(items[4], out min_val) && int.TryParse(items[5], out max_val))
-                    {
-                        if ((net_ID > 0) && (nodes > 0) && (((pos_edges > 0) && (max_val > 0)) || ((pos_edges == 0) && (max_val == 0))) && (((neg_edges > 0) && (min_val < 0)) || ((neg_edges == 0) && (min_val == 0))))
-                        {
-                            if ((selfTies == false) && ((Math.Ceiling((double)pos_edges/((max_val == 0)? 1:max_val)) + Math.Ceiling((double)neg_edges / ((min_val == 0) ? 1 : Math.Abs(min_val)))) <= (nodes * nodes - nodes)))
-                            {
-                                networkSpec[i].Add("Network ID", net_ID);
-                                networkSpec[i].Add("Nodes", nodes);
-                                networkSpec[i].Add("Pos. Edges", pos_edges);
-                                networkSpec[i].Add("Neg. Edges", neg_edges);
-                                networkSpec[i].Add("Min Value", min_val);
-                                networkSpec[i].Add("Max Value", max_val);
-                                i++;
-                            }
-                            else if ((selfTies == true) && (((Math.Ceiling((double)pos_edges / ((max_val == 0) ? 1 : max_val)) + Math.Ceiling((double)neg_edges / ((min_val == 0) ? 1 : Math.Abs(min_val)))) <= nodes * nodes)))
-                            {
-                                networkSpec[i].Add("Network ID", net_ID);
-                                networkSpec[i].Add("Nodes", nodes);
-                                networkSpec[i].Add("Pos. Edges", pos_edges);
-                                networkSpec[i].Add("Neg. Edges", neg_edges);
-                                networkSpec[i].Add("Min Value", min_val);
-                                networkSpec[i].Add("Max Value", max_val);
-                                i++;
-                            }
-                            else
-                            {
-                                throw new IOException("Incorrect input format!");
-                            }
-                        }
-                        else
-                        {
-                            throw new IOException("Incorrect input format!");
-                        }
-                    }
-
-                }
-            }
-            else if (sign == false && num_items == 5)
-            {
-                while(!reader.EndOfStream)
+                string temp_ID = "";
+                RandomNetwork tempNetwork = new RandomNetwork();
+                while (!reader.EndOfStream)
                 {
-                    networkSpec.Add(new Dictionary<string, int>());
+                    // networkSpec.Add(new Dictionary<string, int>());
                     var items = reader.ReadLine().Split(',');
-                    if (int.TryParse(items[0], out net_ID) && int.TryParse(items[1], out nodes) && int.TryParse(items[2], out edges) && int.TryParse(items[3], out min_val) && int.TryParse(items[4], out max_val))
+                    if (int.TryParse(items[1], out nodes) && int.TryParse(items[2], out pos_edges) && int.TryParse(items[3], out neg_edges) && int.TryParse(items[4], out min_val) && int.TryParse(items[5], out max_val))
                     {
-                        if ((net_ID > 0) && (nodes > 0) && (((edges > 0) && (max_val > 0)) || ((edges == 0) && (max_val == 0))))
+                        if ((nodes >= 0) && ((pos_edges >= 0) && (max_val >= 0)) && ((neg_edges >= 0) && (min_val <= 0)) && !(pos_edges > 0 && max_val == 0) && !(neg_edges > 0 && min_val == 0))
                         {
-                            if ((selfTies == false) && (Math.Ceiling((double)edges/(max_val == 0 ? 1 : max_val)) <= (nodes * nodes - nodes)))
+                            net_ID = items[0];
+                            if (net_ID != "")
                             {
-                                networkSpec[i].Add("Network ID", net_ID);
-                                networkSpec[i].Add("Nodes", nodes);
-                                networkSpec[i].Add("Edges", edges);
-                                networkSpec[i].Add("Min Value", min_val);
-                                networkSpec[i].Add("Max Value", max_val);
-                                i++;
+                                temp_ID = net_ID;
+
+                                tempNetwork.NetworkId = net_ID;
+                                tempNetwork.PosEdg = pos_edges;
+                                tempNetwork.NegEdg = neg_edges;
+                                tempNetwork.Min = min_val;
+                                tempNetwork.Max = max_val;
+                                tempNetwork.Nodes = nodes;
+
+                                networkSpec.Add(net_ID, tempNetwork);
+
                             }
-                            else if ((selfTies == true) && (Math.Ceiling((double)edges / (max_val == 0 ? 1 : max_val)) <= nodes * nodes))
+                            else if (string.Equals(net_ID, temp_ID) && temp_ID != "")
                             {
-                                networkSpec[i].Add("Network ID", net_ID);
-                                networkSpec[i].Add("Nodes", nodes);
-                                networkSpec[i].Add("Edges", edges);
-                                networkSpec[i].Add("Min Value", min_val);
-                                networkSpec[i].Add("Max Value", max_val);
-                                i++;
-                            }
-                            else
-                            {
-                                throw new IOException("Incorrect input format!");
+
+                                throw new Exception("Repetitive nodes!");
                             }
                         }
                         else
                         {
-                            throw new IOException("Incorrect input format!");
+                            throw new Exception("Invalid input values!");
                         }
                     }
                     else
                     {
-                        throw new IOException("Incorrect input format!");
+                        throw new Exception("Invalid input format!");
+                    }
+                }
+                NumNetID = networkSpec.Count;
+                foreach (KeyValuePair<string, RandomNetwork> kvp in networkSpec)
+                {
+                    // Console.WriteLine("Nodes: " + kvp.Value.Nodes.ToString());
+                    if (SelfTies)
+                    {
+                        if ((Math.Ceiling((double)kvp.Value.PosEdg / ((kvp.Value.Max == 0) ? 1 : kvp.Value.Max)) + Math.Ceiling((double)kvp.Value.NegEdg / ((kvp.Value.Min == 0) ? 1 : Math.Abs(kvp.Value.Min)))) > (kvp.Value.Nodes * kvp.Value.Nodes - kvp.Value.Nodes))
+                        {
+                            throw new Exception("Edges of this network is out of range!");
+                        }
+                    }
+                    else
+                    {
+                        if ((Math.Ceiling((double)kvp.Value.PosEdg / ((kvp.Value.Max == 0) ? 1 : kvp.Value.Max)) + Math.Ceiling((double)kvp.Value.NegEdg / ((kvp.Value.Min == 0) ? 1 : Math.Abs(kvp.Value.Min)))) > kvp.Value.Nodes * kvp.Value.Nodes)
+                        {
+                            throw new Exception("Edges of this network is out of range!");
+                        }
+
+                    }
+                }
+            }
+
+            else if (sign == false && num_items == 5)
+            {
+                string temp_ID = "";
+                RandomNetwork tempNetwork = new RandomNetwork();
+                while (!reader.EndOfStream)
+                {
+                    // networkSpec.Add(new Dictionary<string, int>());
+                    var items = reader.ReadLine().Split(',');
+                    if (int.TryParse(items[1], out nodes) && int.TryParse(items[2], out edges) && int.TryParse(items[3], out min_val) && int.TryParse(items[4], out max_val))
+                    {
+                        if ((nodes >= 0) && ((edges >= 0) && (max_val >= 0)) && (max_val >= min_val && min_val >= 0) && !(edges > 0 && max_val == 0))
+                        {
+                            net_ID = items[0];
+                            if (net_ID != "")
+                            {
+                                temp_ID = net_ID;
+
+                                tempNetwork.NetworkId = net_ID;
+                                tempNetwork.Edge = edges;
+                                tempNetwork.Min = min_val;
+                                tempNetwork.Max = max_val;
+                                tempNetwork.Nodes = nodes;
+
+                                networkSpec.Add(net_ID, tempNetwork);
+                            }
+                            else if (string.Equals(net_ID, temp_ID) && temp_ID != "")
+                            {
+
+                                throw new Exception("Repetitive nodes!");
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception("Invalid input values!");
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid input format!");
+                    }
+                }
+                NumNetID = networkSpec.Count;
+                foreach (KeyValuePair<string, RandomNetwork> kvp in networkSpec)
+                {
+                    if (SelfTies)
+                    {
+                        if ((Math.Ceiling((double)kvp.Value.Edge / ((kvp.Value.Max == 0) ? 1 : kvp.Value.Max))) > (kvp.Value.Nodes * kvp.Value.Nodes - kvp.Value.Nodes))
+                        {
+                            throw new Exception("Edges of this network is out of range!");
+                        }
+                    }
+                    else
+                    {
+                        if ((Math.Ceiling((double)kvp.Value.Edge / ((kvp.Value.Max == 0) ? 1 : kvp.Value.Max))) > kvp.Value.Nodes * kvp.Value.Nodes)
+                        {
+                            throw new Exception("Edges of this network is out of range!");
+                        }
+
                     }
                 }
             }
@@ -157,8 +281,38 @@ namespace NetworkGUI
                 throw new IOException("Incorrect input format!");
             }
             reader.Close();
-            NumNetID = i;
-            return networkSpec;
+
+            MatrixTable networkSpec_data = new MatrixTable();
+            foreach(KeyValuePair<string, RandomNetwork> kvp in networkSpec)
+            {
+                string s = kvp.Key;
+                int cols = sign ? 5 : 4;
+                networkSpec_data.AddMatrix(s, 1, cols);
+                networkSpec_data[s].Name = s;
+                if (sign)
+                {
+                    string[] colLabels = { "Nodes", "Pos. Edges", "Neg. Edges", "Min", "Max" };
+                    networkSpec_data[s].ColLabels.SetLabels(colLabels);
+
+                    networkSpec_data[s][0, 0] = kvp.Value.Nodes;
+                    networkSpec_data[s][0, 1] = kvp.Value.PosEdg;
+                    networkSpec_data[s][0, 2] = kvp.Value.NegEdg;
+                    networkSpec_data[s][0, 3] = kvp.Value.Min;
+                    networkSpec_data[s][0, 4] = kvp.Value.Max;
+
+                }
+                else
+                {
+                    string[] colLabels = { "Nodes", "Edges", "Min", "Max" };
+                    networkSpec_data[s].ColLabels.SetLabels(colLabels);
+                    networkSpec_data[s][0, 0] = kvp.Value.Nodes;
+                    networkSpec_data[s][0, 1] = kvp.Value.Edge;
+                    networkSpec_data[s][0, 2] = kvp.Value.Min;
+                    networkSpec_data[s][0, 3] = kvp.Value.Max;
+
+                }
+            }
+            return networkSpec_data;
         }
 
 

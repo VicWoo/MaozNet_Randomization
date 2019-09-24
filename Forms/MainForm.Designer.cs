@@ -132,6 +132,8 @@ namespace NetworkGUI
             this.dyadicTransitivityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.singleNetworkToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.networkSpilloverToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            //Yushan
+            this.ndStatsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.blockmodelsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cliquesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cliqueAffiliationMatrixToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
@@ -396,7 +398,7 @@ namespace NetworkGUI
             this.globalRandomMatrixToolStripMenuItem.Size = new System.Drawing.Size(208, 22);
             this.globalRandomMatrixToolStripMenuItem.Text = "Global Randomization";
             // 
-            // Yushan | directedGlobalRandomToolStripMenuItem
+            // Yushan | directedGlobalRandomToolStripMenuItem  
             // 
             this.directedGlobalRandomToolStripMenuItem.Name = "directedGlobalRandomToolStripMenuItem";
             // this.directedGlobalRandomToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.B)));
@@ -834,7 +836,10 @@ namespace NetworkGUI
             this.localTransitivityToolStripMenuItem,
             this.dyadicTransitivityToolStripMenuItem,
             this.singleNetworkToolStripMenuItem,
-            this.networkSpilloverToolStripMenuItem});
+            this.networkSpilloverToolStripMenuItem,
+            //Yushan
+            this.ndStatsToolStripMenuItem});
+            //
             this.matrixToolStripMenuItem.Name = "matrixToolStripMenuItem";
             this.matrixToolStripMenuItem.Size = new System.Drawing.Size(125, 20);
             this.matrixToolStripMenuItem.Text = "Network Operations";
@@ -1064,7 +1069,14 @@ namespace NetworkGUI
             this.networkSpilloverToolStripMenuItem.Name = "networkSpilloverToolStripMenuItem";
             this.networkSpilloverToolStripMenuItem.Size = new System.Drawing.Size(264, 22);
             this.networkSpilloverToolStripMenuItem.Text = "Network Spillover Statistics ";
-            this.networkSpilloverToolStripMenuItem.Click += new System.EventHandler(this.networkSpilloverToolStripMenuItem_Click);
+            this.networkSpilloverToolStripMenuItem.Click += new System.EventHandler(this.networkSpilloverToolStripMenuItem_Click);          
+            // 
+            // ndStatsToolStripMenuItem
+            // 
+            this.ndStatsToolStripMenuItem.Name = "networkDependenceStatsToolStripMenuItem";
+            this.ndStatsToolStripMenuItem.Size = new System.Drawing.Size(264, 22);
+            this.ndStatsToolStripMenuItem.Text = "Network Dependence Statistics ";
+            this.ndStatsToolStripMenuItem.Click += new System.EventHandler(this.ndStatsToolStripMenuItem_Click);
             // 
             // blockmodelsToolStripMenuItem
             // 
@@ -2184,6 +2196,9 @@ namespace NetworkGUI
         private System.Windows.Forms.ToolStripMenuItem dyadicTransitivityToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem singleNetworkToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem networkSpilloverToolStripMenuItem;
+        // Yushan NDS
+        private System.Windows.Forms.ToolStripMenuItem ndStatsToolStripMenuItem;
+        //
         private System.Windows.Forms.ToolStripMenuItem newDiscreteCommunitiesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem communityAffiliationMatrixToolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem communityDensityMatrixToolStripMenuItem1;

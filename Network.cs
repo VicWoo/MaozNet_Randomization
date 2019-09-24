@@ -772,10 +772,14 @@ namespace Network
             {
                 // do nothing
             }
-            //else if (m == "GlobalRandom")
-            //{
+            else if (m == "GlobalRandom")
+            {
 
-            //}
+            }
+            else if (m == "ConfigModel")
+            {
+
+            }
             else
             {
                 Matrix tempMatrix = new Matrix(mTable["Data"]);
@@ -8799,8 +8803,57 @@ namespace Network
             if (!mTable.ContainsKey(m) || mTable[m] == null)
                 throw new IOException("Attempting to write null matrix " + m);
 
-            mTable[m].NetworkId = year;
-            MatrixWriter.WriteMatrixToMatrixFile(mTable[m], fileName, Overwrite, writeYear, writeColLabels);
+            // mTable[m].NetworkId = year;
+            // Yushan
+            if (m == "GlobalRandom" || m == "ConfigModel")
+            {
+                using (StreamWriter writer = new StreamWriter(fileName, !Overwrite))
+                {
+                    if (writeColLabels)
+                        writer.WriteLine(mTable[m].NetworkIdStr);
+
+                    if (writeColLabels)
+                    {
+                        for (int k = 1; k < mTable[m].Cols; k++)
+                        {
+                            writer.Write(',');
+                            writer.Write(mTable[m].ColLabels[k]);
+                        }
+                        writer.WriteLine();
+                    }
+
+                    for (int i = 0; i < mTable[m].Rows; ++i)
+                    {
+                        writer.Write(',');
+                        string label_r, label_c;
+
+                        if (m == "ConfigModel")
+                        {
+                            string[] stringSeparators = new string[] { "," };
+                            string[] s = mTable[m].RowLabels[i].Split(stringSeparators, StringSplitOptions.RemoveEmptyEntries);
+                            label_r = s[0];
+                            label_c = s[1];
+                        }
+                        else
+                        {
+                            label_r = mTable[m][i, 1].ToString();
+                            label_c = mTable[m][i, 2].ToString();
+                        }
+                        // writer.Write(mTable[m].RowLabels[i]);
+                        writer.Write(label_r + "," + label_c);
+                        for (int j = 3; j < mTable[m].Cols; ++j)
+                        {
+                            writer.Write(',');
+                            writer.Write(mTable[m][i, j]);
+                        }
+                        writer.WriteLine();
+                    }
+                    writer.Flush();
+                    writer.Close();
+                }
+            }
+            else
+                MatrixWriter.WriteMatrixToMatrixFile(mTable[m], fileName, Overwrite, writeYear, writeColLabels);
         }
 
         public void SaveCBCOverlapToFile(string fileName, int year, bool writeYear, bool writeColLabels, bool Overwrite, bool diag)
@@ -9752,12 +9805,29 @@ namespace Network
                 for (int row = 0; row < mTable[m].Rows; row++)
                 {
                     string[] values = new string[mTable[m].Cols];
+
+                    // Yushan Modified and can be generalized to other functions than GlobalRandom and ConfigModel 
+                    if (m == "ConfigModel")
+                    {
+                        string[] stringSeparator = { "," };
+                        string[] s = mTable[m].RowLabels[row].Split(stringSeparator, StringSplitOptions.RemoveEmptyEntries);
+
+                        values[1] = s[0];
+                        values[2] = s[1];
+                    }
                     for (int col = 0; col < mTable[m].Cols; col++)
                     {
+                        if (col == 0 && (m == "GlobalRandom" || m == "ConfigModel"))
+                        {
+                            values[0] = mTable[m].NetworkIdStr;
+                            continue;
+                        }
+                        if (m == "ConfigModel" && (col == 1 || col == 2)) continue;
                         if (mTable[m].ColIsNonInteger && col == mTable[m].ColOfNonInteger)
                             values[col] = mTable[m].ActualCol[row];
                         else
                             values[col] = mTable[m][row, col].ToString();
+                        
                     }
                     sw.WriteLine(string.Join(",", values));
                 }
@@ -9772,46 +9842,48 @@ namespace Network
         //Angela
 
 
-        public void SavePathBased(string inputfile, string outputfile, bool overwrite, int order, bool Null, int startYear, int endYear){
+        public void SavePathBased(string inputfile, string outputfile, bool overwrite, int order, bool Null, int startYear, int endYear)
+        {
             PathBasedImbalance PIF = new PathBasedImbalance();
-            
-            if(overwrite) 
-            {            
+
+            if (overwrite)
+            {
                 File.Delete(outputfile);
             }
 
 
             var output_writer = new StreamWriter(outputfile, true);
-           
+
             //6
-            string[] labels_1 = new string[] {"networkid","i","j","positive_1","negative_1","imbal_1"};
-  
-            
+            string[] labels_1 = new string[] { "networkid", "i", "j", "positive_1", "negative_1", "imbal_1" };
+
+
             //11
             string[] labels_2 = new string[] {"networkid","i","j","positive_1","negative_1","imbal_1",
                                 "positive_2","negative_2","total_positive_2","total_negative_2","imbal_2"};
-  
+
             //16
             string[] labels_3 = new string[] {"networkid","i","j","positive_1","negative_1","imbal_1",
                                 "positive_2","negative_2","total_positive_2","total_negative_2","imbal_2",
                                 "positive_3","negative_3","total_positive_3","total_negative_3","imbal_3"};
-                
-            
-            if(Null){
-            labels_1 = new string[] {"networkid","i","j","positive_1","negative_1","imbal_1","p_r_1","n_r_1","rand_imbal_1"};
-                //9
-            
 
-            labels_2 = new string[] {"networkid","i","j","positive_1","negative_1","imbal_1","p_r_1","n_r_1","rand_imbal_1",
+
+            if (Null)
+            {
+                labels_1 = new string[] { "networkid", "i", "j", "positive_1", "negative_1", "imbal_1", "p_r_1", "n_r_1", "rand_imbal_1" };
+                //9
+
+
+                labels_2 = new string[] {"networkid","i","j","positive_1","negative_1","imbal_1","p_r_1","n_r_1","rand_imbal_1",
                                 "positive_2","negative_2","total_positive_2","total_negative_2","imbal_2","p_r_2","n_r_2","rand_imbal_2"};
                 //17
 
-            labels_3 = new string[] {"networkid","i","j","positive_1","negative_1","imbal_1","p_r_1","n_r_1","rand_imbal_1",
+                labels_3 = new string[] {"networkid","i","j","positive_1","negative_1","imbal_1","p_r_1","n_r_1","rand_imbal_1",
                                 "positive_2","negative_2","total_positive_2","total_negative_2","imbal_2","p_r_2","n_r_2","rand_imbal_2",
                                 "positive_3","negative_3","total_positive_3","total_negative_3","imbal_3","p_r_3","n_r_3","rand_imbal_3"};
-                }//25
+            }//25
 
-  
+
             if (order == 3)
             {
                 if (Null)
@@ -9834,38 +9906,39 @@ namespace Network
                     output_writer.WriteLine("networkid,i,j,positive_1,negative_1,imbal_1");
 
             }
-            
-            output_writer.Close();
-            for(int saveLoop = 0; saveLoop<(endYear-startYear)+1; saveLoop++){
-                
-            var output_writer_data = new StreamWriter(outputfile, true);
-           
-            double[,] matrix = PIF.supportScript(inputfile, order, Null, startYear+saveLoop);
 
-            int totalRows = matrix.GetLength(0);
-            int totalCols = matrix.GetLength(1);
-            
-            for (int i = 0; i < totalRows; i++)
+            output_writer.Close();
+            for (int saveLoop = 0; saveLoop < (endYear - startYear) + 1; saveLoop++)
             {
-                string[] dataRow = new string[totalCols];
-                for (int j = 0; j < totalCols; j++)
+
+                var output_writer_data = new StreamWriter(outputfile, true);
+
+                double[,] matrix = PIF.supportScript(inputfile, order, Null, startYear + saveLoop);
+
+                int totalRows = matrix.GetLength(0);
+                int totalCols = matrix.GetLength(1);
+
+                for (int i = 0; i < totalRows; i++)
                 {
-                    dataRow[j] = matrix[i,j].ToString() ;//>= 0? mTable[i, j].ToString() : "#N/A";
+                    string[] dataRow = new string[totalCols];
+                    for (int j = 0; j < totalCols; j++)
+                    {
+                        dataRow[j] = matrix[i, j].ToString();//>= 0? mTable[i, j].ToString() : "#N/A";
+                    }
+                    output_writer_data.WriteLine(String.Join(",", dataRow));
+                    output_writer_data.Flush();
                 }
-                output_writer_data.WriteLine(String.Join(",",dataRow));
-                output_writer_data.Flush();
+                output_writer_data.Close();
             }
-            output_writer_data.Close();
-            }
-            
-           
-    
+
+
+
 
         }
-
       
         //Angela
 
+      
 
 
 
@@ -14212,7 +14285,7 @@ namespace Network
 
         // Yushan 
         // Global Randomization
-        public List<Matrix> ListGlobalRandom(Dictionary<string, List<Matrix>> mRandTable, int numRand, string m, bool sign, List<Dictionary<String, int>> networkSpec)
+        public MatrixTable ListGlobalRandom(Dictionary<string, List<Matrix>> mRandTable, int numRand, string m, bool sign)
         {
             // Load into mTable 
             int numNet = mRandTable.Count;
@@ -14220,7 +14293,7 @@ namespace Network
             string netLabel;
             int net = 0;
             int numCells = 0;
-            List<Matrix>  mRandList = new List<Matrix>();
+            MatrixTable  mRandList = new MatrixTable();
             Matrix tempMatrix = null;
             // Console.Clear();
             foreach (KeyValuePair<string, List<Matrix>> kvp in mRandTable)
@@ -14257,13 +14330,13 @@ namespace Network
                 // int netID = int.Parse(kvp.Key);
                 // List<Matrix> mlist = kvp.Value;
                 // Console.WriteLine("network ID: " + netID.ToString());
-                int netID = int.Parse(netLabel);
+                
                 List<Matrix> mlist = mRandTable[netLabel];
                 for (int i = 0; i < nodes; i++)
                 {
                     for (int j = 0; j < nodes; j++)
                     {
-                        tempMatrix[dummy, 0] = int.Parse(netLabel);
+                        tempMatrix[dummy, 0] = -1;
                         tempMatrix[dummy, 1] = i + 1; // tempMatrix row and col index start at "1" instead of "0"
                         tempMatrix[dummy, 2] = j + 1;
                         for (int k = 0; k < numRand; k++)
@@ -14286,7 +14359,7 @@ namespace Network
                         dummy++;
                     }
                 }
-                mRandList.Add(tempMatrix);
+                mRandList.Add(netLabel, tempMatrix);
             //    // Count edges for each nodes. 
             //    // Validation purpose
             //    int[] pos_count = new int[numRand];
@@ -14348,20 +14421,51 @@ namespace Network
         }
 
 
-        public void LoadGlobalRandom(List<Matrix> mRandList, string m, int netIndex)
+        public void LoadGlobalRandom(DataGridView data, MatrixTable mRandList, string m, string netID)
         {
-            if (netIndex > (mRandList.Count - 1))
+            if (!mRandList.ContainsKey(netID))
             {
-                throw new Exception("The index is out of range!");
+                throw new Exception("The networkID does not exist!");
             }
             // Load into mTable 
-            mTable[m] = new Matrix(mRandList[netIndex]);           
+            mTable[m] = new Matrix(mRandList[netID]);
+            mTable[m].NetworkIdStr = netID;
+
+            // Load data into datagrid
+            data.Columns.Clear();
+
+            for (int i = 0; i < mTable[m].ColLabels.Length; ++i)
+            {
+                data.Columns.Add(mTable[m].ColLabels[i], mTable[m].ColLabels[i]);
+
+                data.Columns[i].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+                data.Columns[i].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                data.Columns[i].Resizable = DataGridViewTriState.True;
+                data.Columns[i].FillWeight = (float)100;
+            }
+
+            for (int row = 0; row < mTable[m].Rows; ++row)
+            {
+                string[] newRow = new string[mTable[m].Cols];
+
+                for (int col = 0; col < mTable[m].Cols; ++col)
+                {
+                    if (String.Equals(mTable[m].ColLabels[col], "Network ID"))
+                        newRow[col] = netID;
+
+                    else
+                    {
+                        newRow[col] = mTable[m][row, col].ToString();
+                    }
+                }
+                data.Rows.Add(newRow);
+            }
         }
         //
         // Yushan
         // Configuration Models
 
-        public List<Matrix> ListConfigModel(Dictionary<string, List<Matrix>> mRandTable, int numRand, string m, bool directed, bool sign, MatrixTable networkSpec_data)
+        public MatrixTable ListConfigModel(Dictionary<string, List<Matrix>> mRandTable, int numRand, string m, bool directed, bool sign, Dictionary<String, MatrixLabels> nodeLabels)
         {
 
             // Load into mTable 
@@ -14370,14 +14474,13 @@ namespace Network
             string netLabel;
             int i = 0;
             int numCells = 0;
-            List<Matrix> mRandList = new List<Matrix>();
+            MatrixTable mRandList = new MatrixTable();
             Matrix tempMatrix = null;
-            // Console.Clear();
+            // Console.Clear();           
             foreach (KeyValuePair<string, List<Matrix>> kvp in mRandTable)
             {
                 nodes = mRandTable[kvp.Key][0].Cols;
                 netLabel = kvp.Key;
-                i++;
 
                 numCells = nodes * nodes;
                 if (sign)
@@ -14407,13 +14510,15 @@ namespace Network
                 // int netID = int.Parse(kvp.Key);
                 // List<Matrix> mlist = kvp.Value;
                 // Console.WriteLine("network ID: " + netID.ToString());
-                int netID = int.Parse(netLabel);
+                
                 List<Matrix> mlist = mRandTable[netLabel];
                 for (i = 0; i < nodes; i++)
                 {
                     for (j = 0; j < nodes; j++)
                     {
-                        tempMatrix[dummy, 0] = int.Parse(netLabel);
+                        List<string> s = new List<string>() { nodeLabels[netLabel][i], nodeLabels[netLabel][j] };
+                        tempMatrix.RowLabels[dummy] = String.Join(",", s);
+                        tempMatrix[dummy, 0] = -1;
                         tempMatrix[dummy, 1] = i + 1; // tempMatrix row and col index start at "1" instead of "0"
                         tempMatrix[dummy, 2] = j + 1;
                         for (int k = 0; k < numRand; k++)
@@ -14445,8 +14550,7 @@ namespace Network
                     //else
                     //    Console.WriteLine("Nodes: " + i.ToString() + " " + "Edgs: " + count.ToString());
                 }
-                mRandList.Add(tempMatrix);
-
+                mRandList.Add(netLabel, tempMatrix);
                 //// Count edges for each nodes. 
                 //// Validation purpose
                 //int[] pos_count = new int[numRand];
@@ -14510,15 +14614,49 @@ namespace Network
             return mRandList;
         }
 
-        public void LoadConfigModel(List<Matrix> mRandList, string m, int netIndex)
+        public void LoadConfigModel(DataGridView data, MatrixTable mRandList, string m, string netID, MatrixLabels nodeLabels)
         {
             // Check if the netIndex is within the range
-            if (netIndex > (mRandList.Count - 1))
+            if (!mRandList.ContainsKey(netID))
             {
-                throw new Exception("The index is out of range!");
+                throw new Exception("The networkID does not exist!");
             }
             // Load into mTable 
-            mTable[m] = new Matrix(mRandList[netIndex]);
+            mTable[m] = new Matrix(mRandList[netID]);
+            mTable[m].NetworkIdStr = netID;
+
+            // Load data into datagrid
+            data.Columns.Clear();
+
+            for (int i = 0; i < mTable[m].ColLabels.Length; ++i)
+            {
+                data.Columns.Add(mTable[m].ColLabels[i], mTable[m].ColLabels[i]);
+
+                data.Columns[i].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+                data.Columns[i].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                data.Columns[i].Resizable = DataGridViewTriState.True;
+                data.Columns[i].FillWeight = (float)100;
+            }
+
+            for (int row = 0; row < mTable[m].Rows; ++row)
+            {
+                string[] newRow = new string[mTable[m].Cols];
+
+                for (int col = 0; col < mTable[m].Cols; ++col)
+                {
+                    if (String.Equals(mTable[m].ColLabels[col], "i") || String.Equals(mTable[m].ColLabels[col], "j"))
+                        newRow[col] = nodeLabels[(int)mTable[m][row, col] - 1];
+                    else if (String.Equals(mTable[m].ColLabels[col], "Network ID"))
+                        newRow[col] = netID;
+
+                    else
+                    {
+                        newRow[col] = mTable[m][row, col].ToString();
+                    }
+                }
+                data.Rows.Add(newRow);
+                // data.Rows[row].HeaderCell.Value = mTable[m].RowLabels[row];
+            }
         }
         // 
     }

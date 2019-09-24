@@ -171,6 +171,12 @@
     <Compile Include="Forms\MultiplexImbalanceForm.Designer.cs">
       <DependentUpon>MultiplexImbalanceForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\NDStatsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\NDStatsForm.designer.cs">
+      <DependentUpon>NDStatsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\PathBasedImbalance.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -210,6 +216,7 @@
     <Compile Include="FortranLibrary\Odouble.cs" />
     <Compile Include="FortranLibrary\Ofloat.cs" />
     <Compile Include="FortranLibrary\Oint.cs" />
+    <Compile Include="IO\NetworkIdTableAlt.cs" />
     <Compile Include="LinearAlgebra\CSEispack\cbabk2.cs" />
     <Compile Include="LinearAlgebra\CSEispack\cbal.cs" />
     <Compile Include="LinearAlgebra\CSEispack\cdiv.cs" />
@@ -591,6 +598,9 @@
     <EmbeddedResource Include="Forms\Multiple_Clique_Analysis.resx">
       <DependentUpon>Multiple_Clique_Analysis.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\NDStatsForm.resx">
+      <DependentUpon>NDStatsForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\NetworkFormationSimulationForm.resx">
       <SubType>Designer</SubType>

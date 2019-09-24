@@ -211,3 +211,4 @@ C:\Users\Victo\MaozNet_Randomization\obj\Debug\NetworkGUI.application
 C:\Users\Victo\MaozNet_Randomization\obj\Debug\NetworkGUI.exe
 C:\Users\Victo\MaozNet_Randomization\obj\Debug\NetworkGUI.pdb
 C:\Users\Victo\MaozNet_Randomization\bin\Debug\NetworkGUI.pdb
+C:\Users\Victo\MaozNet_Randomization\obj\Debug\NetworkGUI.NDStatsForm.resources
