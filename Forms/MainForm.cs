@@ -61,7 +61,7 @@ namespace NetworkGUI
         int numNetID;
         bool sign;
         string inputFile;
-        List<string> netID= new List<string>();        
+        List<string> netID = new List<string>();        
         Dictionary<string, List<Matrix>> mRandTable = null;
         // List<Matrix> mRandList = null;
         
@@ -73,6 +73,16 @@ namespace NetworkGUI
         MatrixTable networkSpec_data = null;
         MatrixTable mRandList = null;
         // Dictionary<string, List<Matrix>> mConfigTable = null;
+        //
+
+        // NDStats
+        List<Matrix> matrixList;
+        // bool _ndsDirected;
+        bool _isMatrix;
+        double alpha;
+        int m;
+        Dictionary<string, MatrixLabels> rowLabels = null;
+        MatrixTable ndsOutput = null;
         //
 
         Network.NetworkGUI net = new Network.NetworkGUI();
@@ -348,7 +358,10 @@ namespace NetworkGUI
                     break;
                 case "NetworkSpilloverStatistics":
                     break;
-
+                // Yushan
+                case "NetworkDependenceStatistics":
+                    break;
+                //
                 case "Multiplex":
                     break;
                 case "GlobalRandom":
@@ -981,7 +994,8 @@ namespace NetworkGUI
                     }
                     else
                     {
-                        currentYear = net.LoadFromMatrixFile(openFileDialog.FileName, currentYear);
+                        // Yushan
+                         currentYear = net.LoadFromMatrixFile(openFileDialog.FileName, currentYear);
                     }
                 }
                 else if (loadFrom == "Dyadic")
@@ -1034,6 +1048,14 @@ namespace NetworkGUI
                         currentYear = 0;
                     }
                     net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);                 
+                }
+                else if (loadFrom == "NetworkDependenceStatistics")
+                {
+                    if (currentYear == netID.Count)
+                    {
+                        currentYear = 0;
+                    }
+                    net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
                 }
                 //
             }
@@ -1125,6 +1147,14 @@ namespace NetworkGUI
                     }
                     net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
                 }
+                else if (loadFrom == "NetworkDependenceStatistics")
+                {
+                    if (currentYear == -1)
+                    {
+                        currentYear = netID.Count - 1;
+                    }
+                    net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
+                }
                 //
             }
             catch (Exception E)
@@ -1178,7 +1208,7 @@ namespace NetworkGUI
 
             jump.ShowDialog();
             // Temporary
-            if (loadFrom == "GlobalRandom" || loadFrom == "ConfigModel")
+            if (loadFrom == "GlobalRandom" || loadFrom == "ConfigModel" || loadFrom == "NetworkDependencyStatistics")
             {
                 try
                 {
@@ -1253,6 +1283,10 @@ namespace NetworkGUI
                     {
                         net.LoadConfigModel(dataGrid, mRandList, displayMatrix, jump.year, nodeLabels[jump.year]);
                     }
+                    else if (loadFrom == "NetworkDependenceStatistics")
+                    {
+                        net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[jump.year], ndsOutput, jump.year);
+                    }
                     //
                 }
             }
@@ -1317,6 +1351,10 @@ namespace NetworkGUI
                 else if (loadFrom == "ConfigModel")
                 {
                     net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
+                }
+                else if (loadFrom == "NetworkDependenceStatistics")
+                {
+                    net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
                 }
                 //
                 MessageBox.Show("That year is not present in this file!", "Error!");
@@ -1388,6 +1426,11 @@ namespace NetworkGUI
             {
                 currentYear = netID.Count - 1;
                 net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
+            }
+            else if (loadFrom == "NetworkDependenceStatistics")
+            {
+                currentYear = netID.Count - 1;
+                net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
             }
             //
 
@@ -1464,6 +1507,11 @@ namespace NetworkGUI
             {
                 currentYear = 0;
                 net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
+            }
+            else if (loadFrom == "NetworkDependenceStatistics")
+            {
+                currentYear = 0;
+                net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
             }
 
             if (net.CohesionFilename != null)
@@ -1683,7 +1731,7 @@ namespace NetworkGUI
                         }
                         else if (loadFrom == "ValuedRandom")
                         {
-                            net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);
+                            net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);                            
                             ++year;
                         }
                         else if (loadFrom == "Monadic")
@@ -3549,7 +3597,8 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 {
                     if (loadFrom == "Matrix")
                     {
-                        year = net.LoadFromMatrixFile(openFileDialog.FileName, year);
+                        currentYear = net.LoadFromMatrixFile(openFileDialog.FileName, year);
+                        Console.WriteLine("Current Network:" + currentNetwork);
                     }
                     else if (loadFrom == "Dyadic")
                     {
@@ -4672,7 +4721,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 YearRangeForm range = new YearRangeForm();
                 // Yushan
                 // Temporary, needed until all functions allow input network IDs to be strings
-                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel" || displayMatrix == "NetworkDependenceStatistics")
                 {
                     range.from = netID[currentYear];
                     range.to = netID[currentYear];
@@ -4764,6 +4813,10 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     {
                         net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[year], nodeLabels[netID[year]]);
                     }
+                    else if (loadFrom == "NetworkDependenceStatistics")
+                    {
+                        net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[year]], ndsOutput, netID[year]);
+                    }
                     //
 
                     progress.curYear = year;
@@ -4821,7 +4874,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                         return;
                     }
                     //Yushan
-                    else if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                    else if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel" || displayMatrix == "NetworkDependenceStatistics")
                     {
                         communityType = CommunityType.Char;
                         currentYear = year;
@@ -5403,14 +5456,49 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             }
         }
 
+        // Yushan
         private void ndStatsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (_ndstatsForm.ShowDialog() == DialogResult.OK)
+            openFileDialog.Multiselect = false;
+            SetMode(false);
+            _ndstatsForm.ShowDialog();
+            loadFrom = "NetworkDependenceStatistics";
+            SetNewDisplayMatrix("NetworkDependenceStatistics");
+            SetFormTitle();
+            // SetNewDisplayMatrix("Data");
+
+            string filename = _ndstatsForm.InputFile;               
+            _isMatrix = _ndstatsForm.IsMatrix;
+            alpha = _ndstatsForm.Alpha;
+            m = _ndstatsForm.M;
+            // _ndsDirected = _ndstatsForm.Directed;
+
+            if (_isMatrix)
+                matrixList =  _ndstatsForm.ReadMatrixFromMatrixFile(filename);
+            else
+                matrixList =  _ndstatsForm.ReadMatrixFromDyadicFile(filename);
+
+            // Number of input matrix for calculating NDSs
+            numNetID = matrixList.Count;
+            netID = new List<string>();
+            rowLabels = new Dictionary<string, MatrixLabels>();
+            
+            for (int i = 0; i < numNetID; i++)
             {
-                SetNewDisplayMatrix("NetworkDependenceStatistics");
-                LoadData();
-                SetChecked();
+                Console.WriteLine("Network ID: " + matrixList[i].NetworkId);
+                netID.Add(matrixList[i].NetworkIdStr);
+                rowLabels.Add(netID[i], matrixList[i].RowLabels);
             }
+                     
+            ndsOutput = net.ListNetworkDependenceStatistics(matrixList, alpha, m);
+
+            currentYear = 0;
+            currentNetwork = netID[currentYear];
+
+            // Load the NDS output of the first network 
+            net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[currentNetwork], ndsOutput, currentNetwork);
+            LoadData();
+            SetChecked();            
         }
         private void dataGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {

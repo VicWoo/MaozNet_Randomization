@@ -260,7 +260,8 @@ namespace Network.IO
 
             string[] colLabels = reader.ReadLine().Split(',');
             //string[] colLabels = tempLabels.Split(',');
-            int rows = reader.CountLines(networkId) - 2; // Subtract off header columns
+            //int rows = reader.CountLines(networkId) - 2; // Subtract off header columns
+            int rows = reader.CountLinesAlt(tempIdStr) - 2;
             int cols = colLabels.Length - 1;
 
             Matrix matrix = new Matrix(rows, cols);
@@ -293,6 +294,9 @@ namespace Network.IO
             
             return matrix; 
         }
+
+
+
 
         private static double ExtractDouble(string s)
         {

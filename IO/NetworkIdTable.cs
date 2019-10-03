@@ -22,8 +22,25 @@ namespace Network.IO
         public NetworkIdTable()
         {
             _table = new Dictionary<int, int>();
-            _minNetworkId = int.MaxValue;
-            _maxNetworkId = int.MinValue;
+            _minNetworkId = int.MinValue;
+            _maxNetworkId = int.MaxValue;
+        }
+
+        public int KeyCounts()
+        {
+            int count = _table.Count;
+            return count;
+        }
+
+        public int FindMaxKey()
+        {
+            // int max = _minNetworkId;
+            int max = -1;
+            foreach (KeyValuePair<int, int> kvp in _table)
+            {
+                if (kvp.Value > max) max = kvp.Value;
+            }
+            return max;
         }
 
         public bool ContainsNetworkId(int networkId)
