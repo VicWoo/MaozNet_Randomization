@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 using Network.Matrices;
 using System.Threading;
+using System.Windows.Forms;
 
 namespace Network.IO
 {
@@ -237,20 +238,35 @@ namespace Network.IO
         private static Matrix ReadMatrixFromMatrixFile(BufferedFileReader reader, int networkId)
         {
             networkId = reader.JumpToNetworkId(networkId, true);
-            reader.ReadLine(); // Skip first line with the network id
-            /*
-            string tempLabels = reader.ReadLine();
-            if (tempLabels == null)
+            // reader.ReadLine(); // Skip first line with the network id
+
+            // Yushan
+            // Read the actual network id in string format from the input file
+            string[] idLine = reader.ReadLine().Split(',');
+            string tempIdStr;
+            int tempId;
+            if (idLine == null)
+            {
+                MessageBox.Show("No network id found!", "Error!");
                 return null;
-            */  
+            }
+            else
+            {
+                tempIdStr = idLine[0];
+                if (int.TryParse(tempIdStr, out tempId))
+                    networkId = tempId;
+            }
+            //
 
             string[] colLabels = reader.ReadLine().Split(',');
             //string[] colLabels = tempLabels.Split(',');
-            int rows = reader.CountLines(networkId) - 2; // Subtract off header columns
+            //int rows = reader.CountLines(networkId) - 2; // Subtract off header columns
+            int rows = reader.CountLinesAlt(tempIdStr) - 2;
             int cols = colLabels.Length - 1;
 
             Matrix matrix = new Matrix(rows, cols);
             matrix.NetworkId = networkId;
+            matrix.NetworkIdStr = tempIdStr;
             matrix.ColLabels.SetLabels(colLabels);
 
             for (int row = 0; row < rows; ++row)
@@ -278,6 +294,9 @@ namespace Network.IO
             
             return matrix; 
         }
+
+
+
 
         private static double ExtractDouble(string s)
         {

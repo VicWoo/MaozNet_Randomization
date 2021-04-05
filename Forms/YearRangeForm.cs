@@ -41,49 +41,66 @@ namespace NetworkGUI
             get { return cohesionCheckBox.Checked; }
         }
 
-        public int from
+        // Yushan
+        public string from
         {
             get
             {
-                return int.Parse(fromText.Text);
+                return fromText.Text;
             }
             set
             {
-                fromText.Text = value.ToString();
+                fromText.Text = value;
             }
         }
 
-        public int to
+        // Yushan
+        public string to
         {
             get
             {
-                return int.Parse(toText.Text);
+                return toText.Text;
             }
             set
             {
-                toText.Text = value.ToString();
+                toText.Text = value;
             }
         }
 
+        // Yushan
         private void goButton_Click(object sender, EventArgs e)
         {
-            int fromYear, toYear;
-            try
+            //int fromYear, toYear;
+            //try
+            //{
+            //    fromYear = int.Parse(fromText.Text);
+            //    toYear = int.Parse(toText.Text);
+            //    if (toYear < fromYear)
+            //    {
+            //        MessageBox.Show("The start year must be less than or equal to the end year!", "Error!");
+            //        return;
+            //    }
+            //}
+            //catch (Exception)
+            //{
+            //    MessageBox.Show("The years entered are invalid!", "Error!");
+            //    return;
+            //}
+
+            if (toText.Text == "")
             {
-                fromYear = int.Parse(fromText.Text);
-                toYear = int.Parse(toText.Text);
-                if (toYear < fromYear)
-                {
-                    MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
-                    return;
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show("The years entered are invalid!", "Error!");
+                MessageBox.Show("Please enter the start", "Error!");
                 return;
             }
-            this.Close();
+            else if (toText.Text == "")
+            {
+                MessageBox.Show("Please enter the end", "Error!");
+                return;
+            }
+            else
+            {
+                this.Close();
+            }
         }
 
         private void cohesionCheckBox_CheckedChanged(object sender, EventArgs e)

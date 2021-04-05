@@ -28,8 +28,18 @@ namespace Network.IO
 
                 if (writeColLabels)
                 {
-                    writer.Write(',');
-                    writer.WriteLine(m.ColLabels.ToString());
+                    // writer.Write(',');
+                    // writer.WriteLine(m.ColLabels.ToString());
+                    for (int j = 0; j < m.Cols; ++j)
+                    {
+                        if (String.Equals(m.ColLabels[j], "Network ID")) { }
+                        else
+                        {
+                            writer.Write(',');
+                            writer.Write(m.ColLabels[j]);
+                        }
+                    }
+                    writer.WriteLine();
                 }
 
                 for (int i = 0; i < m.Rows; ++i)
@@ -37,11 +47,18 @@ namespace Network.IO
                     writer.Write(m.RowLabels[i]);
                     for (int j = 0; j < m.Cols; ++j)
                     {
-                        writer.Write(',');
-                        writer.Write(m[i, j]);
+                        if (String.Equals(m.ColLabels[j], "Network ID")) ;
+                        else
+                        {
+                            writer.Write(',');
+                            writer.Write(m[i, j]);
+                        }
                     }
                     writer.WriteLine();
                 }
+                // Yushan
+                writer.Flush();
+                writer.Close();
             }
         }
 

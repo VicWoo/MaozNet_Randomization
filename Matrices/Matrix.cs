@@ -11,6 +11,7 @@ namespace Network.Matrices
         protected int _rows;
         protected int _cols;
         protected int _networkId;
+        protected string _networkId_str;
         protected double[] _data;
 
         // used for outOfMemory matrices
@@ -43,7 +44,7 @@ namespace Network.Matrices
             Row, Column, DiagonalColumn, DiagonalRow, DiagonalMaximum, DiagonalMinimum, None 
         }
 
-        public Matrix(int rows, int cols, int networkId)
+        public Matrix(int rows, int cols, int networkId, string networkId_str)
         {
             if (rows <= 0)
                 throw new ArgumentOutOfRangeException("rows");
@@ -129,11 +130,18 @@ namespace Network.Matrices
             _standardization = StandardizationType.None;
             _networkId = networkId;
 
+            // Yushan
+            _networkId_str = networkId_str;
+
+
             SetUpAverageArrays();
             currentFileUsed = 0;
         }
-        public Matrix(int rows, int cols) : this(rows, cols, 0) { }
-        public Matrix(int rows) : this(rows, rows, 0) { }
+
+        // Yushan
+        public Matrix(int rows, int cols, string networkId_str) : this(rows, cols, 0, "0") { }
+        public Matrix(int rows, int cols) : this(rows, cols, 0, "0") { }
+        public Matrix(int rows) : this(rows, rows, 0, "0") { }
         public Matrix(Matrix m)
             : this(m._rows, m._cols)
         {
@@ -242,6 +250,12 @@ namespace Network.Matrices
             set { _networkId = value; }
         }
 
+        // Yushan
+        public string NetworkIdStr
+        {
+            get { return _networkId_str; }
+            set { _networkId_str = value; }
+        }
         public string Name
         {
             get { return _name; }
@@ -670,6 +684,8 @@ namespace Network.Matrices
                     _colSqrAvg.CopyTo(m._colSqrAvg, 0);
                     m._standardization = _standardization;
                     m._networkId = _networkId;
+                    // Yushan
+                    m._networkId_str = _networkId_str;
                     m._rowLabels.CopyFrom(_rowLabels);
                     m._colLabels.CopyFrom(_colLabels);
                 }
@@ -914,6 +930,8 @@ namespace Network.Matrices
 
             tmp.Labels.CopyFrom(_rowLabels);
             tmp.NetworkId = NetworkId;
+            //Yushan
+            tmp.NetworkIdStr = NetworkIdStr;
 
             return tmp;
         }

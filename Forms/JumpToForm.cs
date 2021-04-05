@@ -19,36 +19,40 @@ namespace NetworkGUI
             InitializeComponent();
         }
 
+        // Yushan
         private void goButton_Click(object sender, EventArgs e)
         {
             if (yearTextBox.Text == "")
             {
-                MessageBox.Show("Please enter a year to jump to!", "Error!");
+                MessageBox.Show("Please enter a network ID to jump to!", "Error!");
+                return;
             }
             else
             {
-                try
-                {
-                    int.Parse(yearTextBox.Text);
-                    this.Close();
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("Invalid year entered!", "Error!");
-                }
+                //try
+                //{
+                //    int.Parse(yearTextBox.Text);
+                //    this.Close();
+                //}
+                //catch (Exception)
+                //{
+                //    MessageBox.Show("Invalid year entered!", "Error!");
+                //}
+                this.Close();
 
             }
         }
 
-        public int year
+        // Yushan
+        public string year
         {
             get
             {
-                return int.Parse(yearTextBox.Text);
+                return yearTextBox.Text;
             }
             set
             {
-                yearTextBox.Text = value.ToString();
+                yearTextBox.Text = value;
             }
         }
     }

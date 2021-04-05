@@ -35,6 +35,7 @@ namespace NetworkGUI
         // Yushan
         GlobalRandomForm _globalRandomForm = new GlobalRandomForm();
         ConfigModelForm _configModelForm = new ConfigModelForm();
+        NDStatsForm _ndstatsForm = new NDStatsForm();
         //
 
 
@@ -60,19 +61,34 @@ namespace NetworkGUI
         int numNetID;
         bool sign;
         string inputFile;
-        List<Dictionary<string, int>> networkSpec = null;
+        List<string> netID = new List<string>();        
         Dictionary<string, List<Matrix>> mRandTable = null;
-        List<Matrix> mRandList = null;
+        // List<Matrix> mRandList = null;
+        
 
         // Configuration Models
+        // List<string> netID_config;
         bool _configDirected;
+        Dictionary<string, MatrixLabels> nodeLabels = null;
         MatrixTable networkSpec_data = null;
+        MatrixTable mRandList = null;
         // Dictionary<string, List<Matrix>> mConfigTable = null;
+        //
+
+        // NDStats
+        List<Matrix> matrixList;
+        // bool _ndsDirected;
+        bool _isMatrix;
+        double alpha;
+        int m;
+        Dictionary<string, MatrixLabels> rowLabels = null;
+        MatrixTable ndsOutput = null;
         //
 
         Network.NetworkGUI net = new Network.NetworkGUI();
         int startYear;
         int currentYear;
+        string currentNetwork;
         bool reachBinary;
         bool diag;
         string loadFrom;
@@ -109,7 +125,7 @@ namespace NetworkGUI
             RoleEquivalence, AffilEuclidean, AffilCorrelation, AffilCorrelationEvent, AffilEucildeanEvent, DataEvent, BlockPartitionS, BlockPartitionI, DensityBlockMatrix,
             RelativeDensityBlockMatrix, BlockCohesivenessMatrix, BlockCharacteristics, ClusterPartition, DensityClusterMatrix, RelativeDensityClusterMatrix, ClusterCohesivenessMatrix,
                 //Yushan
-                GlobalRandom, ConfigModel //
+                GlobalRandom, ConfigModel//
         }
 
 
@@ -342,8 +358,16 @@ namespace NetworkGUI
                     break;
                 case "NetworkSpilloverStatistics":
                     break;
-
+                // Yushan
+                case "NetworkDependenceStatistics":
+                    break;
+                //
                 case "Multiplex":
+                    break;
+                case "GlobalRandom":
+                    break;
+                case "ConfigModel":
+                    // net.LoadConfigModel(dataGrid, mRandList, displayMatrix, currentYear, nodeLabels);
                     break;
 
                 default:
@@ -970,7 +994,8 @@ namespace NetworkGUI
                     }
                     else
                     {
-                        currentYear = net.LoadFromMatrixFile(openFileDialog.FileName, currentYear);
+                        // Yushan
+                         currentYear = net.LoadFromMatrixFile(openFileDialog.FileName, currentYear);
                     }
                 }
                 else if (loadFrom == "Dyadic")
@@ -1010,19 +1035,27 @@ namespace NetworkGUI
                 // Yushan
                 else if (loadFrom == "GlobalRandom")
                 {
-                    if (currentYear == _globalRandomForm.NumNetID)
+                    if (currentYear == netID.Count)
                     {
                         currentYear = 0;
                     }
-                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                    net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[currentYear]);
                 }
                 else if (loadFrom == "ConfigModel")
                 {
-                    if (currentYear == _configModelForm.NumNetID)
+                    if (currentYear == netID.Count)
                     {
                         currentYear = 0;
                     }
-                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                    net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);                 
+                }
+                else if (loadFrom == "NetworkDependenceStatistics")
+                {
+                    if (currentYear == netID.Count)
+                    {
+                        currentYear = 0;
+                    }
+                    net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
                 }
                 //
             }
@@ -1102,17 +1135,25 @@ namespace NetworkGUI
                 {
                     if (currentYear == -1)
                     {
-                        currentYear = _globalRandomForm.NumNetID - 1;
+                        currentYear = netID.Count - 1;
                     }
-                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                    net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[currentYear]);
                 }
                 else if (loadFrom == "ConfigModel")
                 {
                     if (currentYear == -1)
                     {
-                        currentYear = _configModelForm.NumNetID - 1;
+                        currentYear = netID.Count - 1;
                     }
-                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                    net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
+                }
+                else if (loadFrom == "NetworkDependenceStatistics")
+                {
+                    if (currentYear == -1)
+                    {
+                        currentYear = netID.Count - 1;
+                    }
+                    net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
                 }
                 //
             }
@@ -1149,57 +1190,102 @@ namespace NetworkGUI
                 return;
 
             JumpToForm jump = new JumpToForm();
-            jump.year = currentYear;
+
+            // Yushan
+            /* - Need to further generalize input year to string so that "jumpYr" can be dumped. 
+  - Other functions whose input network IDs are still defaulted to integer will need this integer variable "jumpYr" */
+
+            int jumpYear = -1;
+
+            // Now the jump.year is a string           
+            if (loadFrom == "GlobalRandom" || loadFrom == "ConfigModel")
+                jump.year = netID[currentYear];
+            else
+            {
+                jump.year = currentYear.ToString();
+                jumpYear = currentYear;
+            }
 
             jump.ShowDialog();
+            // Temporary
+            if (loadFrom == "GlobalRandom" || loadFrom == "ConfigModel" || loadFrom == "NetworkDependencyStatistics")
+            {
+                try
+                {
+                    jumpYear = netID.FindIndex(x => x == jump.year);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("The network ID entered is invalid!", "Error!");
+                    return;
+                }
+            }
+            else
+            {
+                try
+                {
+                    jumpYear = int.Parse(jump.year);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("The year entered is invalid!", "Error!");
+                    return;
+                }
+            }
+            //
+
             try
             {
-                if (jump.year != currentYear) // No need to be wasteful and reload unnecessarily
+                if (!jump.year.Equals(netID[currentYear]) || jumpYear != currentYear) // No need to be wasteful and reload unnecessarily
                 {
 
                     if (loadFrom == "Matrix")
                     {
                         if (openFileDialog.Multiselect)
                         {
-                            newYear = net.LoadFromMultipleFiles(fileNames, jump.year);
+                            newYear = net.LoadFromMultipleFiles(fileNames, jumpYear);
                         }
                         else
                         {
-                            newYear = net.LoadFromMatrixFile(openFileDialog.FileName, jump.year);
+                            newYear = net.LoadFromMatrixFile(openFileDialog.FileName, jumpYear);
                         }
                     }
                     else if (loadFrom == "Dyadic")
                     {
                         if (openFileDialog.Multiselect)
                         {
-                            newYear = net.LoadFromMultivariableDyadicFile(openFileDialog.FileName, jump.year);
+                            newYear = net.LoadFromMultivariableDyadicFile(openFileDialog.FileName, jumpYear);
                         }
                         else
                         {
-                            newYear = net.LoadFromDyadicFile(openFileDialog.FileName, jump.year);
+                            newYear = net.LoadFromDyadicFile(openFileDialog.FileName, jumpYear);
                         }
                     }
                     else if (loadFrom == "Affil")
                     {
-                        newYear = net.LoadFromAffiliationFile(openFileDialog.FileName, jump.year);
+                        newYear = net.LoadFromAffiliationFile(openFileDialog.FileName, jumpYear);
                     }
                     else if (loadFrom == "Monadic")
                     {
-                        newYear = net.LoadFromMonadicFile(openFileDialog.FileName, jump.year);
+                        newYear = net.LoadFromMonadicFile(openFileDialog.FileName, jumpYear);
                     }
                     else if (loadFrom == "ABMModel")
                     {
-                        newYear = jump.year;
-                        net.mTable["Data"] = net.mList[jump.year - _ABMForm.netID];
+                        newYear = jumpYear;
+                        net.mTable["Data"] = net.mList[jumpYear - _ABMForm.netID];
                     }
                     // Yushan
                     else if (loadFrom == "GlobalRandom")
                     {
-                        net.LoadGlobalRandom(mRandList, displayMatrix, jump.year);
+                        net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, jump.year);
                     }
                     else if (loadFrom == "ConfigModel")
                     {
-                        net.LoadConfigModel(mRandList, displayMatrix, jump.year);
+                        net.LoadConfigModel(dataGrid, mRandList, displayMatrix, jump.year, nodeLabels[jump.year]);
+                    }
+                    else if (loadFrom == "NetworkDependenceStatistics")
+                    {
+                        net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[jump.year], ndsOutput, jump.year);
                     }
                     //
                 }
@@ -1260,14 +1346,19 @@ namespace NetworkGUI
                 // Yushan
                 else if (loadFrom == "GlobalRandom")
                 {
-                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                    net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[currentYear]);
                 }
                 else if (loadFrom == "ConfigModel")
                 {
-                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                    net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
+                }
+                else if (loadFrom == "NetworkDependenceStatistics")
+                {
+                    net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
                 }
                 //
                 MessageBox.Show("That year is not present in this file!", "Error!");
+                return;
             }
         }
 
@@ -1325,11 +1416,23 @@ namespace NetworkGUI
                 currentYear = _ABMForm.netID + _ABMForm.networks - 1;
                 net.mTable["Data"] = net.mList[currentYear - _ABMForm.netID];
             }
+            // Yushan
             else if (loadFrom == "GlobalRandom")
             {
-                currentYear = _globalRandomForm.NumNetID - 1;
-                net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                currentYear = netID.Count - 1;
+                net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[currentYear]);
             }
+            else if (loadFrom == "ConfigModel")
+            {
+                currentYear = netID.Count - 1;
+                net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
+            }
+            else if (loadFrom == "NetworkDependenceStatistics")
+            {
+                currentYear = netID.Count - 1;
+                net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
+            }
+            //
 
             if (net.CohesionFilename != null)
                 net.CohesionMatrix = MatrixReader.ReadMatrixFromFile(net.CohesionFilename, currentYear);
@@ -1398,12 +1501,19 @@ namespace NetworkGUI
             else if (loadFrom == "GlobalRandom")
             {
                 currentYear = 0;
-                net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[currentYear]);
             }
             else if (loadFrom == "ConfigModel")
             {
-                net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                currentYear = 0;
+                net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
             }
+            else if (loadFrom == "NetworkDependenceStatistics")
+            {
+                currentYear = 0;
+                net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[currentYear]], ndsOutput, netID[currentYear]);
+            }
+
             if (net.CohesionFilename != null)
                 net.CohesionMatrix = MatrixReader.ReadMatrixFromFile(net.CohesionFilename, currentYear);
 
@@ -1473,11 +1583,50 @@ namespace NetworkGUI
                 if (displayMatrix == "Affiliation")
                     range.SetMode(true);
 
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 ProgressForm progress = new ProgressForm();
                 progress.endYear = endYear;
@@ -1503,6 +1652,9 @@ namespace NetworkGUI
                     net.StandardizeByDiagonalMaximum(displayMatrix);
 
                 int year = startYear;
+                // Yushan
+                bool currentEqualsStart = (currentYear == startYear);
+
                 currentYear = startYear;
                 while (true)
                 {
@@ -1527,13 +1679,21 @@ namespace NetworkGUI
                     //Yushan
                     else if (loadFrom == "GlobalRandom")
                     {
-                        net.LoadGlobalRandom(mRandList, displayMatrix, year);
+                        if (!currentEqualsStart)
+                        {
+                            net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[year]);
+                            LoadData();
+                        }
                         net.SaveMatrixToMatrixFile(saveFileDialog.FileName, year, displayMatrix, displayMatrix != "Characteristics",
     displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwrite && year == startYear);
                     }
                     else if (loadFrom == "ConfigModel")
                     {
-                        net.LoadConfigModel(mRandList, displayMatrix, year);
+                        if (!currentEqualsStart)
+                        {
+                            net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[year], nodeLabels[netID[year]]);
+                            LoadData();
+                        }
                         net.SaveMatrixToMatrixFile(saveFileDialog.FileName, year, displayMatrix, displayMatrix != "Characteristics",
     displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwrite && year == startYear);
                     }
@@ -1571,7 +1731,7 @@ namespace NetworkGUI
                         }
                         else if (loadFrom == "ValuedRandom")
                         {
-                            net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);
+                            net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);                            
                             ++year;
                         }
                         else if (loadFrom == "Monadic")
@@ -1581,12 +1741,12 @@ namespace NetworkGUI
                         // Yushan
                         else if (loadFrom == "GlobalRandom")
                         {
-                            net.LoadGlobalRandom(mRandList, displayMatrix, year + 1);
+                            net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[year + 1]);
                             ++year;
                         }
                         else if (loadFrom == "ConfigModel")
                         {
-                            net.LoadConfigModel(mRandList, displayMatrix, year + 1);
+                            net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[year + 1], nodeLabels[netID[year + 1]]);
                             ++year;
                         }
                         //
@@ -1630,11 +1790,11 @@ namespace NetworkGUI
                 // Yushan
                 else if (loadFrom == "GlobalRandom")
                 {
-                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                    net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[currentYear]);
                 }
                 else if (loadFrom == "ConfigModel")
                 {
-                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                    net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
                 }
                 //
             }
@@ -1652,11 +1812,50 @@ namespace NetworkGUI
                 if (displayMatrix == "Affiliation")
                     range.SetMode(true);
 
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 ProgressForm progress = new ProgressForm();
                 progress.endYear = endYear;
@@ -1735,11 +1934,11 @@ namespace NetworkGUI
                         //Yushan
                         else if (loadFrom == "GlobalRandom")
                         {
-                            net.LoadGlobalRandom(mRandList, displayMatrix, year + 1);
+                            net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[year + 1]);
                         }
                         else if (loadFrom == "ConfigModel")
                         {
-                            net.LoadConfigModel(mRandList, displayMatrix, year + 1);                           
+                            net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[year + 1], nodeLabels[netID[year + 1]]);
                         }
                         //
                         else if (loadFrom == "Monadic")
@@ -1829,11 +2028,50 @@ namespace NetworkGUI
             {
                 int startYear, endYear;
                 YearRangeForm range = new YearRangeForm();
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 ProgressForm p = new ProgressForm(startYear, endYear, 0);
                 p.Show();
@@ -1870,11 +2108,11 @@ namespace NetworkGUI
                     // Yushan
                     else if (loadFrom == "GlobalRandom")
                     {
-                        net.LoadGlobalRandom(mRandList, displayMatrix, year);
+                        net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[year]);
                     }
                     else if (loadFrom == "ConfigModel")
                     {
-                        net.LoadConfigModel(mRandList, displayMatrix, year);
+                        net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[year], nodeLabels[netID[year]]);
                     }
                     //
                     else if (loadFrom == "Monadic")
@@ -1943,11 +2181,11 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 // Yushan
                 else if (loadFrom == "GlobalRandom")
                 {
-                    net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+                    net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[currentYear]);
                 }
                 else if (loadFrom == "ConfigModel")
                 {
-                    net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+                    net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[currentYear], nodeLabels[netID[currentYear]]);
                 }
                 //
             }
@@ -1962,11 +2200,51 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
 
                 int startYear, endYear;
                 YearRangeForm range = new YearRangeForm();
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 ProgressForm progress = new ProgressForm();
                 progress.endYear = endYear;
@@ -2159,11 +2437,50 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
 
             int startYear, endYear;
             YearRangeForm range = new YearRangeForm();
-            range.from = currentYear;
-            range.to = currentYear;
-            range.ShowDialog();
-            startYear = range.from;
-            endYear = range.to;
+            // Yushan
+            // Temporary, needed until all functions allow input network IDs to be strings
+            if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+            {
+                range.from = netID[currentYear];
+                range.to = netID[currentYear];
+                range.ShowDialog();
+                try
+                {
+                    startYear = netID.FindIndex(x => x == range.from);
+                    endYear = netID.FindIndex(x => x == range.to);
+                    if (startYear > endYear)
+                    {
+                        MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                        return;
+                    }
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                    return;
+                }
+            }
+            else
+            {
+                range.from = currentYear.ToString();
+                range.to = currentYear.ToString();
+                range.ShowDialog();
+                try
+                {
+                    startYear = int.Parse(range.from);
+                    endYear = int.Parse(range.to);
+                    if (startYear > endYear)
+                    {
+                        MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                        return;
+                    }
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("The years entered are invalid!", "Error!");
+                    return;
+                }
+            }
 
 
             List<int> netIDs = new List<int>();
@@ -2214,11 +2531,50 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
 
                 int startYear, endYear;
                 YearRangeForm range = new YearRangeForm();
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 int prevYear = -1;
                 for (int year = startYear; year <= endYear; ++year)
@@ -2463,11 +2819,50 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 if (displayMatrix == "Affiliation")
                     range.SetMode(true);
 
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 ProgressForm progress = new ProgressForm();
                 progress.endYear = endYear;
@@ -2858,8 +3253,11 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 MessageBox.Show("There was an error loading the random matrix: " + E.Message, "Error!");
             }
             SetFormTitle();
-            if (displayMatrix == "Affil")
-                displayMatrix = "Data";
+            //if (displayMatrix == "Affil")
+            //    displayMatrix = "Data";
+            // Yushan
+            SetNewDisplayMatrix("Data");
+            //
             LoadData();
             currentYear = _randomForm.Year;
             _optionsForm.ReachNumMatrices = _randomForm.N - 1;
@@ -2881,8 +3279,11 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 MessageBox.Show("There was an error loading the random matrix: " + E.Message, "Error!");
             }
             SetFormTitle();
-            if (displayMatrix == "Affil")
-                displayMatrix = "Data";
+            //if (displayMatrix == "Affil")
+            //    displayMatrix = "Data";
+            // Yushan
+            SetNewDisplayMatrix("Data");
+            //
             LoadData();
             currentYear = _vrandomForm.Year;
             _optionsForm.ReachNumMatrices = _vrandomForm.N - 1;
@@ -2904,8 +3305,11 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 MessageBox.Show("There was an error loading the random matrix: " + E.Message, "Error!");
             }
             SetFormTitle();
-            if (displayMatrix == "Affil")
-                displayMatrix = "Data";
+            //if (displayMatrix == "Affil")
+            //    displayMatrix = "Data";
+            // Yushan
+            SetNewDisplayMatrix("Data");
+            //
             LoadData();
             currentYear = _randomForm.Year;
             _optionsForm.ReachNumMatrices = _randomForm.N - 1;
@@ -2927,8 +3331,13 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 MessageBox.Show("There was an error loading the random matrix: " + E.Message, "Error!");
             }
             SetFormTitle();
-            if (displayMatrix == "Affil")
-                displayMatrix = "Data";
+           
+            //if (displayMatrix == "Affil")
+            //    displayMatrix = "Data";
+            // Yushan 
+            // Got rid of the two lines of code above and added the following one so that this function can run and its result can load, regardless of what function is performed before. Same for other "Random" functions
+            SetNewDisplayMatrix("Data");
+            //
             LoadData();
             currentYear = _vrandomForm.Year;
             _optionsForm.ReachNumMatrices = _vrandomForm.N - 1;
@@ -2945,22 +3354,27 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             sign = _globalRandomForm.Sign;
             numRandNet = _globalRandomForm.NumRandNet;
             selfTies = _globalRandomForm.SelfTies;
-            networkSpec = _globalRandomForm.loadFromInputFile(inputFile, sign, selfTies);
-            numNetID = networkSpec.Count;
+            networkSpec_data = _globalRandomForm.loadFromInputFile(inputFile, sign, selfTies);
+            numNetID = networkSpec_data.Count;
 
             loadFrom = "GlobalRandom";
-            SetNewDisplayMatrix("Data");
+            SetNewDisplayMatrix("GlobalRandom");
             SetFormTitle();
-
+            netID = new List<string>();
+            foreach (KeyValuePair<string, Matrix> kvp in networkSpec_data)
+            {
+                netID.Add(kvp.Key);
+            }
+            currentNetwork = netID[0];
             currentYear = 0;
-            mRandTable = RandomMatrix.LoadGlobalRandom(numRandNet, _globalDirected, sign, selfTies, networkSpec);
-            mRandList  = net.ListGlobalRandom(mRandTable, numRandNet, displayMatrix, sign, networkSpec);
-            net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+            mRandTable = RandomMatrix.LoadGlobalRandom(numRandNet, _globalDirected, sign, selfTies, networkSpec_data);
+            mRandList  = net.ListGlobalRandom(mRandTable, numRandNet, displayMatrix, sign);
+            net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, currentNetwork);
             LoadData();
             
         }
 
-        // Undirected Configuration Model
+        // Undirected Global Randomization
         private void globalUndirectedToolStripMenuItem_Click(object sender, EventArgs e)
         {
             openFileDialog.Multiselect = false;
@@ -2971,17 +3385,22 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             sign = _globalRandomForm.Sign;
             numRandNet = _globalRandomForm.NumRandNet;
             selfTies = _globalRandomForm.SelfTies;
-            networkSpec = _globalRandomForm.loadFromInputFile(inputFile, sign, selfTies);
-            numNetID = networkSpec.Count;
+            networkSpec_data = _globalRandomForm.loadFromInputFile(inputFile, sign, selfTies);
+            numNetID = networkSpec_data.Count;
 
             loadFrom = "GlobalRandom";
-            SetNewDisplayMatrix("Data");
+            SetNewDisplayMatrix("GlobalRandom");
             SetFormTitle();
-
+            netID = new List<string>();
+            foreach (KeyValuePair<string, Matrix> kvp in networkSpec_data)
+            {
+                netID.Add(kvp.Key);
+            }
+            currentNetwork = netID[0];
             currentYear = 0;
-            mRandTable = RandomMatrix.LoadGlobalRandom(numRandNet, _globalDirected, sign, selfTies, networkSpec);
-            mRandList = net.ListGlobalRandom(mRandTable, numRandNet, displayMatrix, sign, networkSpec);
-            net.LoadGlobalRandom(mRandList, displayMatrix, currentYear);
+            mRandTable = RandomMatrix.LoadGlobalRandom(numRandNet, _globalDirected, sign, selfTies, networkSpec_data);
+            mRandList = net.ListGlobalRandom(mRandTable, numRandNet, displayMatrix, sign);
+            net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, currentNetwork);
             LoadData();
         }
 
@@ -2994,18 +3413,33 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             _configDirected = true;
             inputFile = _configModelForm.InputFile;
             sign = _configModelForm.Sign;
-            numRandNet = _configModelForm.NumRandNet;
+            numRandNet = _configModelForm.NumRandNet;           
             selfTies = _configModelForm.SelfTies;
-            networkSpec_data = _configModelForm.loadFromInputFile(inputFile, sign, selfTies);
+            networkSpec_data = _configModelForm.loadFromInputFile(inputFile, sign, selfTies);          
+
+            // string[] netId = new string[_configModelForm.NumNetID];
+            int i = 0;
+            netID = new List<string>();
+            nodeLabels = new Dictionary<string, MatrixLabels>();
+            numNetID = _configModelForm.NumNetID;
+            foreach (KeyValuePair<string, Matrix> kvp in networkSpec_data)
+            {
+                netID.Add(kvp.Key);
+                nodeLabels.Add(kvp.Key, networkSpec_data[netID[i++]].RowLabels);
+            }
+            
 
             loadFrom = "ConfigModel";
-            SetNewDisplayMatrix("Data");
+            SetNewDisplayMatrix("ConfigModel");
             SetFormTitle();
 
+            currentNetwork = netID[0];
             currentYear = 0;
             mRandTable = RandomMatrix.LoadConfigModel(numRandNet, _configDirected, sign, selfTies, networkSpec_data);
-            mRandList = net.ListConfigModel(mRandTable, numRandNet, displayMatrix, _configDirected, sign, networkSpec_data);
-            net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+
+            mRandList = net.ListConfigModel(mRandTable, numRandNet, displayMatrix, _configDirected, sign, nodeLabels);    
+            
+            net.LoadConfigModel(dataGrid, mRandList, displayMatrix, currentNetwork, nodeLabels[currentNetwork]);
             LoadData();
 
             
@@ -3023,15 +3457,31 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             selfTies = _configModelForm.SelfTies;
             networkSpec_data = _configModelForm.loadFromInputFile(inputFile, sign, selfTies);
 
+
+            // string[] netId = new string[_configModelForm.NumNetID];            
+            int i = 0;
+            netID = new List<string>();
+            nodeLabels = new Dictionary<string, MatrixLabels>();
+            numNetID = _configModelForm.NumNetID;
+            foreach (KeyValuePair<string, Matrix> kvp in networkSpec_data)
+            {
+                netID.Add(kvp.Key);
+                nodeLabels.Add(kvp.Key, networkSpec_data[netID[i++]].RowLabels);
+            }            
+
             loadFrom = "ConfigModel";
-            SetNewDisplayMatrix("Data");
+            SetNewDisplayMatrix("ConfigModel");
             SetFormTitle();
 
 
+            currentNetwork = netID[0];
             currentYear = 0;
             mRandTable = RandomMatrix.LoadConfigModel(numRandNet, _configDirected, sign, selfTies, networkSpec_data);
-            mRandList = net.ListConfigModel(mRandTable, numRandNet, displayMatrix, _configDirected, sign, networkSpec_data);
-            net.LoadConfigModel(mRandList, displayMatrix, currentYear);
+
+            
+            mRandList = net.ListConfigModel(mRandTable, numRandNet, displayMatrix, _configDirected, sign, nodeLabels);
+            
+            net.LoadConfigModel(dataGrid, mRandList, displayMatrix, currentNetwork, nodeLabels[currentNetwork]);
             LoadData();
         }
 
@@ -3091,11 +3541,50 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             {
                 int startYear, endYear;
                 YearRangeForm range = new YearRangeForm();
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 ProgressForm progress = new ProgressForm();
                 progress.endYear = endYear;
@@ -3108,7 +3597,8 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 {
                     if (loadFrom == "Matrix")
                     {
-                        year = net.LoadFromMatrixFile(openFileDialog.FileName, year);
+                        currentYear = net.LoadFromMatrixFile(openFileDialog.FileName, year);
+                        Console.WriteLine("Current Network:" + currentNetwork);
                     }
                     else if (loadFrom == "Dyadic")
                     {
@@ -3121,10 +3611,6 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     else if (loadFrom == "ValuedRandom")
                     {
                         net.LoadValuedRandom(_vrandomForm.N, "Data", _randomSymmetric, _vrandomForm.vmin, _vrandomForm.vmax, _vrandomForm.datatype, _vrandomForm.zerodiagonalized, _vrandomForm.ProbRange, _vrandomForm.MinProb, _vrandomForm.MaxProb, _vrandomForm.RandomN, _vrandomForm.RandomMinN, _vrandomForm.RandomMaxN, _vrandomForm.RandomIntN);
-                    }
-                    else if (loadFrom == "GlobalRandom")
-                    {
-                        net.LoadGlobalRandom(mRandList, displayMatrix, year);
                     }
                     if (year != previousYear && year <= endYear)
                     {
@@ -4122,11 +4608,50 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             {
                 int startYear, endYear;
                 YearRangeForm range = new YearRangeForm();
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 ProgressForm progress = new ProgressForm();
                 progress.endYear = endYear;
@@ -4194,11 +4719,50 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             {
                 int startYear, endYear;
                 YearRangeForm range = new YearRangeForm();
-                range.from = currentYear;
-                range.to = currentYear;
-                range.ShowDialog();
-                startYear = range.from;
-                endYear = range.to;
+                // Yushan
+                // Temporary, needed until all functions allow input network IDs to be strings
+                if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel" || displayMatrix == "NetworkDependenceStatistics")
+                {
+                    range.from = netID[currentYear];
+                    range.to = netID[currentYear];
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = netID.FindIndex(x => x == range.from);
+                        endYear = netID.FindIndex(x => x == range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The end year must be less than or equal to the start year!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The network IDs entered are invalid!", "Error!");
+                        return;
+                    }
+                }
+                else
+                {
+                    range.from = currentYear.ToString();
+                    range.to = currentYear.ToString();
+                    range.ShowDialog();
+                    try
+                    {
+                        startYear = int.Parse(range.from);
+                        endYear = int.Parse(range.to);
+                        if (startYear > endYear)
+                        {
+                            MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
+                            return;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("The years entered are invalid!", "Error!");
+                        return;
+                    }
+                }
 
                 ProgressForm progress = new ProgressForm();
                 progress.endYear = endYear;
@@ -4243,11 +4807,15 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     // Yushan
                     else if (loadFrom == "GlobalRandom")
                     {
-                        net.LoadGlobalRandom(mRandList, displayMatrix, year);
+                        net.LoadGlobalRandom(dataGrid, mRandList, displayMatrix, netID[year]);
                     }
                     else if (loadFrom == "ConfigModel")
                     {
-                        net.LoadConfigModel(mRandList, displayMatrix, year);
+                        net.LoadConfigModel(dataGrid, mRandList, displayMatrix, netID[year], nodeLabels[netID[year]]);
+                    }
+                    else if (loadFrom == "NetworkDependenceStatistics")
+                    {
+                        net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[netID[year]], ndsOutput, netID[year]);
                     }
                     //
 
@@ -4306,7 +4874,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                         return;
                     }
                     //Yushan
-                    else if (displayMatrix == "Data" && (loadFrom == "GlobalRandom" || loadFrom == "ConfigModel"))
+                    else if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel" || displayMatrix == "NetworkDependenceStatistics")
                     {
                         communityType = CommunityType.Char;
                         currentYear = year;
@@ -4888,6 +5456,50 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             }
         }
 
+        // Yushan
+        private void ndStatsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            openFileDialog.Multiselect = false;
+            SetMode(false);
+            _ndstatsForm.ShowDialog();
+            loadFrom = "NetworkDependenceStatistics";
+            SetNewDisplayMatrix("NetworkDependenceStatistics");
+            SetFormTitle();
+            // SetNewDisplayMatrix("Data");
+
+            string filename = _ndstatsForm.InputFile;               
+            _isMatrix = _ndstatsForm.IsMatrix;
+            alpha = _ndstatsForm.Alpha;
+            m = _ndstatsForm.M;
+            // _ndsDirected = _ndstatsForm.Directed;
+
+            if (_isMatrix)
+                matrixList =  _ndstatsForm.ReadMatrixFromMatrixFile(filename);
+            else
+                matrixList =  _ndstatsForm.ReadMatrixFromDyadicFile(filename);
+
+            // Number of input matrix for calculating NDSs
+            numNetID = matrixList.Count;
+            netID = new List<string>();
+            rowLabels = new Dictionary<string, MatrixLabels>();
+            
+            for (int i = 0; i < numNetID; i++)
+            {
+                Console.WriteLine("Network ID: " + matrixList[i].NetworkId);
+                netID.Add(matrixList[i].NetworkIdStr);
+                rowLabels.Add(netID[i], matrixList[i].RowLabels);
+            }
+                     
+            ndsOutput = net.ListNetworkDependenceStatistics(matrixList, alpha, m);
+
+            currentYear = 0;
+            currentNetwork = netID[currentYear];
+
+            // Load the NDS output of the first network 
+            net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, rowLabels[currentNetwork], ndsOutput, currentNetwork);
+            LoadData();
+            SetChecked();            
+        }
         private void dataGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
 
