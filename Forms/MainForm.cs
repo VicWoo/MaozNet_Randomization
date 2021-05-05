@@ -690,7 +690,21 @@ namespace NetworkGUI
                 this.Text = "Matrix Manipulator v" + versionString;
                 return;
             }
-
+            if (loadFrom == "GlobalRandom")
+            {
+                this.Text = string.Concat("Matrix Manipulator v" + versionString + " - ", "Global Randomization", " - ", netID[currentYear]);
+                return;
+            }
+            if (loadFrom == "ConfigModel")
+            {
+                this.Text = string.Concat("Matrix Manipulator v" + versionString + " - ", "Configuration Model", " - ", netID[currentYear]);
+                return;
+            }
+            if (loadFrom == "NetworkDependenceStatistics")
+            {
+                this.Text = string.Concat("Matrix Manipulator v" + versionString + " - ", "Network Dependence Statistics", " - ", orderedNetIds[currentYear]);
+                return;
+            }
             if (openFileDialog.Multiselect)
                 file = fileNames[fileNames.Length - 1];
             else
@@ -3487,9 +3501,6 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
 
             loadFrom = "ConfigModel";
             SetNewDisplayMatrix("ConfigModel");
-            SetFormTitle();
-
-
             currentNetwork = netID[0];
             currentYear = 0;
             mRandTable = RandomMatrix.LoadConfigModel(numRandNet, _configDirected, sign, selfTies, networkSpec_data);
@@ -3499,6 +3510,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             
             net.LoadConfigModel(dataGrid, mRandList, displayMatrix, currentNetwork, nodeLabels[currentNetwork]);
             LoadData();
+            SetFormTitle();
         }
 
 
@@ -3611,7 +3623,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     if (loadFrom == "Matrix")
                     {
                         currentYear = net.LoadFromMatrixFile(openFileDialog.FileName, year);
-                        Console.WriteLine("Current Network:" + currentNetwork);
+                        //Console.WriteLine("Current Network:" + currentNetwork);
                     }
                     else if (loadFrom == "Dyadic")
                     {
@@ -5477,7 +5489,6 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             _ndstatsForm.ShowDialog();
             loadFrom = "NetworkDependenceStatistics";
             SetNewDisplayMatrix("NetworkDependenceStatistics");
-            SetFormTitle();
 
             alpha = _ndstatsForm.Alpha;
             m = _ndstatsForm.M;
@@ -5490,6 +5501,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             currentYear = 0;
             net.LoadNetworkDependenceStatistics(dataGrid, displayMatrix, ndsOutput, orderedNetIds, currentYear);
             LoadData();
+            SetFormTitle();
             SetChecked();
         }
         private void dataGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)

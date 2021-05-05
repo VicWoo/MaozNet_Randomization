@@ -139,7 +139,7 @@ namespace Network.Matrices
         }
 
         // Yushan
-        public Matrix(int rows, int cols, string networkId_str) : this(rows, cols, 0, "0") { }
+        public Matrix(int rows, int cols, string networkId_str) : this(rows, cols, 0, networkId_str) { }
         public Matrix(int rows, int cols) : this(rows, cols, 0, "0") { }
         public Matrix(int rows) : this(rows, rows, 0, "0") { }
         public Matrix(Matrix m)

@@ -2049,7 +2049,7 @@ namespace Network.Matrices
             foreach (Matrix m in networkSpec_data)
             {
                 string net_ID = m.NetworkIdStr;
-                Console.WriteLine("net_ID: " + net_ID);
+                //Console.WriteLine("net_ID: " + net_ID);
                 Matrix modelSpec = m;               
                 mRandTable.Add(net_ID, new List<Matrix>());
                 for (int i = 0; i < n; i++)

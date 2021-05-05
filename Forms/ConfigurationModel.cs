@@ -383,6 +383,7 @@ namespace NetworkGUI
                 List<RandomNetwork> tempList = networkSpec[netId];
                 int cols = sign?4:3;
                 Matrix m = new Matrix(nodes[i], cols, netId);
+                //m.NetworkIdStr = netId;
 
                 if(sign)
                 {

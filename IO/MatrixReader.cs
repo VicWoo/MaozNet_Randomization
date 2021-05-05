@@ -213,7 +213,7 @@ namespace Network.IO
             //matrix.ColLabels.SetLabels(labels.Keys);
 
             int totalLines = reader.CountLines(networkId);
-            Console.WriteLine("Total Lines: {0}", totalLines);
+            //Console.WriteLine("Total Lines: {0}", totalLines);
             for (int i = 0; i < totalLines; ++i)
             {
                 string s = reader.ReadLine();
