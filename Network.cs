@@ -773,7 +773,8 @@ namespace Network
                 // do nothing
             }
             else if (m == "NetworkDependenceStatistics")
-            { }
+            {
+            }
             else if (m == "GlobalRandom")
             {
 
@@ -8709,6 +8710,8 @@ namespace Network
                 throw new IOException("This file is not of matrix OR dyadic type!");
 
             mTable["Data"] = MatrixReader.ReadMatrixFromFile(filename);
+            //Yushan
+            mList = MatrixReader.ReadMatrixListFromFile(filename);
             tempDataMatrix = new Matrix(mTable["Data"]);
             return mTable["Data"].NetworkId;
         }
@@ -14290,16 +14293,12 @@ namespace Network
             data.Rows.Add(row);
         }
 
-        // Yushan
-        public void LoadTestMatrixList(List<Matrix> matrixList, int index, string m)
-        {
-            mTable[m] = new Matrix(matrixList[index]);
-        }
-        public MatrixTable ListNetworkDependenceStatistics(List<Matrix> matrixList, double alpha, int p_m)
+        // Yushan NDS
+        public MatrixTable ListNetworkDependenceStatistics(double alpha, int p_m)
         {
             MatrixTable ndsOutputTable = new MatrixTable();
 
-            Matrix ndsOutput = null;
+            Matrix ndsOutput = null;            
             string[] colLabels = { "Network ID", "i", "j", "edges", "out two paths", "in two paths", "cyclical triangs", "intrans triangs", "GWESP" };
             List<string> rowLabels = null;
             int rows, cols;
@@ -14311,15 +14310,15 @@ namespace Network
             Matrix IT = null; // Intrans Triads
             Matrix GWESP = null; // Geometrically Weighted Edge-wise Partners
 
-            for (int n = 0; n < matrixList.Count; n++)
+            for (int n = 0; n < mList.Count; n++)
             {
-                rows = matrixList[n].RowLabels.Count;
-                cols = matrixList[n].ColLabels.Count;
+                rows = mList[n].RowLabels.Count;
+                cols = mList[n].ColLabels.Count;
                 if (rows != cols)
                 {
                     throw new Exception("The input should be square matrix!");
                 }
-                Matrix tempMatrix = new Matrix(matrixList[n]);
+                Matrix tempMatrix = new Matrix(mList[n]);
                 rowLabels = new List<string>();
                 int rows_output = rows * cols;
                 ndsOutput = new Matrix(rows_output, 9, tempMatrix.NetworkId, tempMatrix.NetworkIdStr);
@@ -14384,12 +14383,12 @@ namespace Network
                     {
                         // Row label for output table is in the form of "i,j"
                         string tempLabel;
-                        tempLabel = tempMatrix.RowLabels[i] + "," + tempMatrix.RowLabels[j];
+                        tempLabel = tempMatrix.RowLabels[i] + "," + tempMatrix.ColLabels[j];
 
                         rowLabels.Add(tempLabel);
                         ndsOutput[dummy, 0] = tempMatrix.NetworkId; // Need to convert to NetworkIdStr in output file
-                        ndsOutput[dummy, 1] = i + 1; // Need to convert to string labels
-                        ndsOutput[dummy, 2] = j + 1; // Same as above
+                        ndsOutput[dummy, 1] = i; // Place holder for RowLabels[i]. Need to convert back to string labels
+                        ndsOutput[dummy, 2] = j; // Place holder for ColLabels[j]. Same as above
                         ndsOutput[dummy, 3] = tempMatrix[i, j];
                         ndsOutput[dummy, 4] = OTP[i, j];
                         ndsOutput[dummy, 5] = ITP[i, j];
@@ -14406,16 +14405,10 @@ namespace Network
             return ndsOutputTable;
         }
 
-        public void LoadNetworkDependenceStatistics(DataGridView data, string m, MatrixLabels rowLabels, MatrixTable ndsOutputTable, string netID)
+        public void LoadNetworkDependenceStatistics(DataGridView data, string m, MatrixTable ndsOutputTable, string[] orderedNetIds, int idx)
         {
-            // Check if the netIndex is within the range
-            if (!ndsOutputTable.ContainsKey(netID))
-            {
-                throw new Exception("The networkID does not exist!");
-            }
             // Load into mTable 
-            mTable[m] = new Matrix(ndsOutputTable[netID]);
-            mTable[m].NetworkIdStr = netID;
+            mTable[m] = new Matrix(ndsOutputTable[orderedNetIds[idx]]);
 
             // Load data into datagrid
             data.Columns.Clear();
@@ -14433,24 +14426,27 @@ namespace Network
             for (int row = 0; row < mTable[m].Rows; ++row)
             {
                 string[] newRow = new string[mTable[m].Cols];
-
-                for (int col = 0; col < mTable[m].Cols; ++col)
+                newRow[0] = mTable[m].NetworkIdStr;
+                mTable[m][row, 0] = mTable[m].NetworkId;
+                // "<rowLabels[i]>,<colLabels[j]>"
+                mTable[m].RowLabels[row] = mTable[m].RowLabels[row];
+                string[] rowColLabels = mTable[m].RowLabels[row].Split(',');
+                newRow[1] = rowColLabels[0];
+                newRow[2] = rowColLabels[1];
+                mTable[m][row, 1] = mTable[m][row, 1];
+                mTable[m][row, 2] = mTable[m][row, 2];
+                for (int col = 3; col < mTable[m].Cols; ++col)
                 {
-                    if (String.Equals(mTable[m].ColLabels[col], "i") || String.Equals(mTable[m].ColLabels[col], "j"))
-                        newRow[col] = rowLabels[(int)mTable[m][row, col] - 1];
-                    else if (String.Equals(mTable[m].ColLabels[col], "Network ID"))
-                        newRow[col] = netID;
 
-                    else
-                    {
-                        // Preserve two decimal points precision
-                        newRow[col] = mTable[m][row, col].ToString("0.00");
-                    }
+                    // Preserve two decimal points precision
+                    newRow[col] = mTable[m][row, col].ToString("0.00");
+                    mTable[m][row, col] = Math.Round(mTable[m][row, col], 2);
+
                 }
+                row++;
                 data.Rows.Add(newRow);
                 // data.Rows[row].HeaderCell.Value = mTable[m].RowLabels[row];
             }
-
         }
         // Yushan 
         // Global Randomization

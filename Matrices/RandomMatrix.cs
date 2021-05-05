@@ -910,7 +910,7 @@ namespace Network.Matrices
         }
 
         // Load Global Randomization
-        public static Dictionary<string, List<Matrix>> LoadGlobalRandom (int n, bool directed, bool sign, bool selfties, MatrixTable networkSpec_data)
+        public static Dictionary<string, List<Matrix>> LoadGlobalRandom (int n, bool directed, bool sign, bool selfties, List<Matrix> networkSpec_data)
         {
             Dictionary<string, List<Matrix>> mRandTable = new Dictionary<string, List<Matrix>>();
             int numNet = networkSpec_data.Count;
@@ -923,9 +923,9 @@ namespace Network.Matrices
             //int vmax;
             int i, j;
 
-            foreach (KeyValuePair<string, Matrix> kvp in networkSpec_data)
+            foreach (Matrix m in networkSpec_data)
             {
-                net_id = kvp.Key;
+                net_id = m.NetworkIdStr;
                 //nodes = networkSpec[i]["Nodes"];
                 //pos_edges = networkSpec[i]["Pos. Edges"];
                 //neg_edges = networkSpec[i]["Neg. Edges"];
@@ -937,9 +937,9 @@ namespace Network.Matrices
                 for (j = 0; j < n; j++)
                 {
                     if (directed)
-                        mlist.Add(GenerateDirectedGlobal(sign, selfties, kvp.Value));
+                        mlist.Add(GenerateDirectedGlobal(sign, selfties, m));
                     else
-                        mlist.Add(GenerateUndirectedGlobal(sign, selfties, kvp.Value));
+                        mlist.Add(GenerateUndirectedGlobal(sign, selfties, m));
                 }
 
                 mRandTable.Add(net_id, mlist);
@@ -964,6 +964,7 @@ namespace Network.Matrices
             Vector vmin, vmax;
             Vector deg, pos_deg, neg_deg;
             Matrix m = new Matrix(nodes, nodes);
+            m.NetworkIdStr = modelSpec.NetworkIdStr;
             m.Clear();
             vmin = modelSpec.GetColVector(modelSpec.ColLabels["Min"]);
             vmax = modelSpec.GetColVector(modelSpec.ColLabels["Max"]);
@@ -1066,7 +1067,7 @@ namespace Network.Matrices
             // List<int> pos_row_pool = new List<int>();
             // List<int> neg_row_pool = new List<int>();
             Matrix m = new Matrix(nodes);
-
+            m.NetworkIdStr = modelSpec.NetworkIdStr;
 
             vmin = modelSpec.GetColVector(modelSpec.ColLabels["Min"]);
             vmax = modelSpec.GetColVector(modelSpec.ColLabels["Max"]);
@@ -2042,14 +2043,14 @@ namespace Network.Matrices
         }
 
         // Load Configuration Model 
-        public static Dictionary<string, List<Matrix>> LoadConfigModel (int n, bool directed, bool sign, bool selfties, MatrixTable networkSpec_data)
+        public static Dictionary<string, List<Matrix>> LoadConfigModel (int n, bool directed, bool sign, bool selfties, List<Matrix> networkSpec_data)
         {
             Dictionary<string, List<Matrix>> mRandTable = new Dictionary<string, List<Matrix>>();
-            foreach (KeyValuePair<string, Matrix> kvp in networkSpec_data)
+            foreach (Matrix m in networkSpec_data)
             {
-                string net_ID = kvp.Key;
+                string net_ID = m.NetworkIdStr;
                 Console.WriteLine("net_ID: " + net_ID);
-                Matrix modelSpec = kvp.Value;               
+                Matrix modelSpec = m;               
                 mRandTable.Add(net_ID, new List<Matrix>());
                 for (int i = 0; i < n; i++)
                 {   if (directed)

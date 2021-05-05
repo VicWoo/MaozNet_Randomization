@@ -20,6 +20,7 @@ namespace Network.IO
         {
             return ReadMatrixFromFile(filename, networkId, 0);
         }
+
         public static Matrix ReadMatrixFromFile(string filename, int networkId, int dyadicVariable)
         {
             if (filename == null)
@@ -36,6 +37,58 @@ namespace Network.IO
                         return ReadMatrixFromDyadicFile(reader, networkId, dyadicVariable);
                     case BufferedFileReader.Type.Vector:
                         return ReadMatrixFromVectorFile(reader, networkId);
+                    default:
+                        throw new FileLoadException("Invalid file type.");
+                }
+            }
+        }
+
+        // Yushan
+        // Read all matrixes into a matrix list
+        public static List<Matrix> ReadMatrixListFromFile(string filename)
+        {
+            return ReadMatrixListFromFile(filename, 0);
+        }
+        public static List<Matrix> ReadMatrixListFromFile(string filename, int dyadicVariable)
+        {
+            if (filename == null)
+                throw new ArgumentNullException("filename");
+
+            BufferedFileReader reader = BufferedFileTable.GetFile(filename);
+            int numIds = reader.CountNetworkIds();
+            List<Matrix> mlist = new List<Matrix>();
+            Matrix temp;
+            lock (reader)
+            {
+                switch (reader.FileType)
+                {
+                    case BufferedFileReader.Type.Matrix:
+                        {
+                            for (int i = 0; i < numIds; i++)
+                            {
+                                temp = ReadMatrixFromMatrixFile(reader, i);
+                                mlist.Add(temp);
+                            }
+                            return mlist;
+                        }
+                    case BufferedFileReader.Type.Dyadic:
+                        {
+                            for (int i = 0; i < numIds; i++)
+                            {
+                                temp = ReadMatrixFromDyadicFile(reader, i, dyadicVariable);
+                                mlist.Add(temp);
+                            }
+                            return mlist;
+                        }
+                    case BufferedFileReader.Type.Vector:
+                        {
+                            for (int i = 0; i < numIds; i++)
+                            {
+                                temp = ReadMatrixFromVectorFile(reader, i);
+                                mlist.Add(temp);
+                            }
+                            return mlist;
+                        }
                     default:
                         throw new FileLoadException("Invalid file type.");
                 }
@@ -146,17 +199,21 @@ namespace Network.IO
         private static Matrix ReadMatrixFromDyadicFile(BufferedFileReader reader, int networkId, int dyadicVariable)
         {
             networkId = reader.JumpToNetworkId(networkId, true);
+            // Yushan
+            List<string> rowLabels = new List<string>();
+            List<string> colLabels = new List<string>();
+            List<double> flatMatrix = new List<double>();
+        
+            //Dictionary<string, int> labels = reader.GetDyadicLabels(networkId);
+            //int rows = labels.Count;
 
-            Dictionary<string, int> labels = reader.GetDyadicLabels(networkId);
-            int rows = labels.Count;
-
-            Matrix matrix = new Matrix(rows, rows);
-            //matrix.NetworkId = networkId;
-            //matrix.NetworkId = int.Parse("1" + matrix.NetworkId); // new
-            matrix.RowLabels.SetLabels(labels.Keys);
-            matrix.ColLabels.SetLabels(labels.Keys);
+            //Matrix matrix = new Matrix(rows, rows);
+            
+            //matrix.RowLabels.SetLabels(labels.Keys);
+            //matrix.ColLabels.SetLabels(labels.Keys);
 
             int totalLines = reader.CountLines(networkId);
+            Console.WriteLine("Total Lines: {0}", totalLines);
             for (int i = 0; i < totalLines; ++i)
             {
                 string s = reader.ReadLine();
@@ -165,8 +222,14 @@ namespace Network.IO
 
                 if (parts.Length < 3 + dyadicVariable)
                     throw new FileLoadException("Missing value for line: " + s);
-
-                matrix[labels[parts[1]], labels[parts[2]]] = ExtractDouble(parts[3 + dyadicVariable]);
+                
+                // Yushan
+                if (!rowLabels.Contains(parts[1]))
+                    rowLabels.Add(parts[1]);
+                if (!colLabels.Contains(parts[2]))
+                    colLabels.Add(parts[2]);
+                flatMatrix.Add(ExtractDouble(parts[3 + dyadicVariable]));
+                //matrix[labels[parts[1]], labels[parts[2]]] = ExtractDouble(parts[3 + dyadicVariable]);
             }
             /*
             if (networkId < 1000)
@@ -174,8 +237,20 @@ namespace Network.IO
             else
                 networkId = int.Parse("2" + networkId);
             */
+            int rows = rowLabels.Count;
+            int cols = colLabels.Count;
+            Matrix matrix = new Matrix(rows, cols);
             matrix.NetworkId = networkId;
-            
+            matrix.NetworkIdStr = reader.GetNetworkRealId(networkId);
+            matrix.RowLabels.SetLabels(rowLabels);
+            matrix.ColLabels.SetLabels(colLabels);
+            for (int i = 0; i < rows; i++)
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    matrix[i, j] = flatMatrix[i * cols + j];
+                }
+            }
             
             return matrix;
         }
@@ -187,25 +262,27 @@ namespace Network.IO
             {
                 networkId = reader.JumpToNetworkId(networkId, true);
 
-                Dictionary<string, int> labels = reader.GetDyadicLabels(networkId);
-                int rows = labels.Count;
+                //Dictionary<string, int> labels = reader.GetDyadicLabels(networkId);
+                //int rows = labels.Count;
 
                 // initialize the matrices
                 List<Matrix> multipleMatrices = new List<Matrix>();
-                
-                string[] topLabels = reader.TopLine.Split(',');
+                List<string> rowLabels = new List<string>();
+                List<string> colLabels = new List<string>();
+                //string[] topLabels = reader.TopLine.Split(',');
                 //string[] labels = new string[reader.CountVarsInDyadicFile()];
+                int varCnt = reader.CountVarsInDyadicFile();
+                List<double> flatMatrixList = new List<double>();
+                //for (int var = 0; var < reader.CountVarsInDyadicFile(); var++)
+                //{
+                //    Matrix matrix = new Matrix(rows, rows);
+                //    matrix.NetworkId = networkId;
+                //    matrix.Name = topLabels[var + 3];
+                //    matrix.RowLabels.SetLabels(labels.Keys);
+                //    matrix.ColLabels.SetLabels(labels.Keys);
 
-                for (int var = 0; var < reader.CountVarsInDyadicFile(); var++)
-                {
-                    Matrix matrix = new Matrix(rows, rows);
-                    matrix.NetworkId = networkId;
-                    matrix.Name = topLabels[var + 3];
-                    matrix.RowLabels.SetLabels(labels.Keys);
-                    matrix.ColLabels.SetLabels(labels.Keys);
-
-                    multipleMatrices.Add(matrix);
-                }
+                //    multipleMatrices.Add(matrix);
+                //}
 
                 int totalLines = reader.CountLines(networkId);
 
@@ -213,13 +290,40 @@ namespace Network.IO
                 {
                     string s = reader.ReadLine();
                     string[] parts = s.Split(',');
-
+                    if (!rowLabels.Contains(parts[1]))
+                        rowLabels.Add(parts[1]);
+                    if (!colLabels.Contains(parts[2]))
+                        colLabels.Add(parts[2]);
                     //if (parts.Length < 3 + reader.CountVarsInDyadicFile())
                       //  throw new FileLoadException("Missing value for line: " + s);
 
-                    for (int var = 0; var < reader.CountVarsInDyadicFile(); var++)
+                    for (int var = 0; var < varCnt; var++)
                     {
-                        multipleMatrices[var][labels[parts[1]], labels[parts[2]]] = ExtractDouble(parts[3 + var]);
+                        //multipleMatrices[var][labels[parts[1]], labels[parts[2]]] = ExtractDouble(parts[3 + var]);
+                        flatMatrixList.Add(ExtractDouble(parts[3 + var]));
+                    }
+                }
+
+                int rows = rowLabels.Count;
+                int cols = colLabels.Count;
+                for (int var = 0; var < varCnt; var++)
+                {
+                    Matrix matrix = new Matrix(rows, cols);
+                    matrix.RowLabels.SetLabels(rowLabels);
+                    matrix.ColLabels.SetLabels(colLabels);
+                    matrix.NetworkId = networkId;
+                    matrix.NetworkIdStr = reader.GetNetworkRealId(networkId);
+                    multipleMatrices.Add(matrix);
+                }
+
+                for (int i = 0; i < rows; i++)
+                {
+                    for (int j = 0; j < cols; j++)
+                    {
+                        for (int var = 0; var < varCnt; var++)
+                        {
+                            multipleMatrices[var][i, j] = flatMatrixList[i * cols * varCnt + j * varCnt + var];
+                        }
                     }
                 }
                 /*
@@ -238,35 +342,21 @@ namespace Network.IO
         private static Matrix ReadMatrixFromMatrixFile(BufferedFileReader reader, int networkId)
         {
             networkId = reader.JumpToNetworkId(networkId, true);
-            // reader.ReadLine(); // Skip first line with the network id
-
-            // Yushan
-            // Read the actual network id in string format from the input file
-            string[] idLine = reader.ReadLine().Split(',');
-            string tempIdStr;
-            int tempId;
-            if (idLine == null)
-            {
-                MessageBox.Show("No network id found!", "Error!");
-                return null;
-            }
-            else
-            {
-                tempIdStr = idLine[0];
-                if (int.TryParse(tempIdStr, out tempId))
-                    networkId = tempId;
-            }
-            //
+            if (networkId == -1)
+                throw new Exception("Network ID does not exist!");
+            reader.ReadLine(); // Skip first line with the network id
 
             string[] colLabels = reader.ReadLine().Split(',');
+            //Yushan
+            List<string> rowLabels = new List<string>();
             //string[] colLabels = tempLabels.Split(',');
-            //int rows = reader.CountLines(networkId) - 2; // Subtract off header columns
-            int rows = reader.CountLinesAlt(tempIdStr) - 2;
+            int rows = reader.CountLines(networkId) - 2; // Subtract off header columns
+            //int rows = reader.CountLinesAlt(tempIdStr) - 2;
             int cols = colLabels.Length - 1;
 
             Matrix matrix = new Matrix(rows, cols);
             matrix.NetworkId = networkId;
-            matrix.NetworkIdStr = tempIdStr;
+            matrix.NetworkIdStr = reader.GetNetworkRealId(networkId);
             matrix.ColLabels.SetLabels(colLabels);
 
             for (int row = 0; row < rows; ++row)
@@ -278,17 +368,18 @@ namespace Network.IO
                 string[] parts = temp.Split(',');
 
                 if (parts.Length > cols + 1) // one extra for header
-                    throw new FileLoadException("Matrix file has too many entries for network id: " + networkId.ToString() + ", row " + parts[0]);
+                    throw new FileLoadException("Matrix file has too many entries for network id: " + matrix.NetworkIdStr + ", row " + parts[0]);
 
                 if (parts.Length == 0)
-                    throw new FileLoadException("Matrix file has no entries for network id: " + networkId.ToString());
+                    throw new FileLoadException("Matrix file has no entries for network id: " + matrix.NetworkIdStr);
 
-                matrix.RowLabels[row] = parts[0];
+                //matrix.RowLabels[row] = parts[0];
+                rowLabels.Add(parts[0]);
 
                 for (int i = 1; i < parts.Length; ++i)
                     matrix[row, i - 1] = ExtractDouble(parts[i]);
             }
-            
+            matrix.RowLabels.SetLabels(rowLabels);
             reader.closeStream();
             reader.Dispose(); /* Change made 12/3/2010 - PM */
             

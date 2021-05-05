@@ -18,11 +18,14 @@ namespace Network.IO
         private readonly List<string> _lines;
         private readonly NetworkIdTable _networkIdTable;
         // Yushan
-        private readonly NetworkIdTableAlt _networkIdTableAlt;
+        private readonly List<string> _networkRealId;
         //
         private readonly BufferedStream _stream;
         private Type _type;
 
+        //Yushan
+        private int _networkId = -1;
+        //
         private int _curLine = -1;
         private byte[] _data;
 
@@ -50,11 +53,13 @@ namespace Network.IO
             _lines = new List<string>();
             _networkIdTable = new NetworkIdTable();
             // Yushan
-            _networkIdTableAlt = new NetworkIdTableAlt();
+            _networkRealId = new List<string>();
+            //
             _data = new byte[bufferSize];
             _isStreamLoaded = false;
 
             GuessType();
+            Console.WriteLine("Type: {0}", _type);
 
             TryLoadFile();
         }
@@ -126,6 +131,10 @@ namespace Network.IO
             //}
             if(_stream.Position == _stream.Length)
                 closeStream();
+            for (int i = 0; i < _networkRealId.Count; i++)
+            {
+                Console.WriteLine("networkID: {0}, line: {1}", _networkRealId[i], _networkIdTable[i]);
+            }
 
             return true;
         }
@@ -144,14 +153,10 @@ namespace Network.IO
             string curLine = sb.ToString();
 
             _lines.Add(curLine);
-            
-
-            // Add year to table
-            ParseStringForNetworkId(curLine);
 
             if (_lines.Count > 1 || _type == Type.Matrix)
                 // Add network ID to string table
-                ParseStringForNetworkIdAlt(curLine);
+                ParseStringForNetworkId(curLine);
         }
 
         private void ParseStringForNetworkId(string curLine)
@@ -160,29 +165,25 @@ namespace Network.IO
             int commaPos = curLine.IndexOf(',');
             if (commaPos > 0)
                 firstPart = curLine.Substring(0, curLine.IndexOf(','));
-            int networkId;
-            if (int.TryParse(firstPart, out networkId))
-            {
-                if (_type != Type.Matrix || curLine.LastIndexOf(',') <= commaPos)
-                    AddNetworkIdToTable(networkId);
-            }
-            else
-            {
-                AddNetworkIdToTable(_networkIdTable.FindMaxKey() + 1);
-            }
-        }
-
-        // Yushan
-        private void ParseStringForNetworkIdAlt(string curLine)
-        {
-            string firstPart = curLine;
-            int commaPos = curLine.IndexOf(',');
-            if (commaPos > 0)
-                firstPart = curLine.Substring(0, curLine.IndexOf(','));            
-
             if (_type != Type.Matrix || curLine.LastIndexOf(',') <= commaPos)
-                AddNetworkIdToTableAlt(firstPart);
-            
+            {
+                // Yushan
+                if (_networkRealId.Count == 0)
+                {
+                    _networkRealId.Add(firstPart);
+                    _networkId = 0;
+                    _networkIdTable[_networkId] = _lines.Count - 2;
+                    Console.WriteLine("network ID: {0:d}; network Real ID: {1:s}", _networkId, _networkRealId[_networkId]);
+                }
+                else if (!String.Equals(_networkRealId[_networkRealId.Count - 1], firstPart))
+                {
+                    _networkRealId.Add(firstPart);
+                    _networkId++;
+                    _networkIdTable[_networkId] = _lines.Count - 2;
+                    Console.WriteLine("network ID: {0:d}; network Real ID: {1:s}", _networkId, _networkRealId[_networkId]);
+                }
+            }
+           
         }
 
         private void AddNetworkIdToTable(int networkId)
@@ -190,15 +191,6 @@ namespace Network.IO
             if (!_networkIdTable.ContainsNetworkId(networkId))
             {
                 _networkIdTable[networkId] = _lines.Count - 2;
-            }
-        }
-
-        // Yushan
-        private void AddNetworkIdToTableAlt(string networkId)
-        {
-            if (!_networkIdTableAlt.ContainsNetworkId(networkId))
-            {
-                _networkIdTableAlt[networkId] = _lines.Count - 2;
             }
         }
 
@@ -235,6 +227,27 @@ namespace Network.IO
             }
         }
 
+
+        public string GetNetworkRealId(int networkId)
+        {
+            while (!_networkIdTable.ContainsNetworkId(networkId) && networkId > _networkIdTable.MaxNetworkId && TryLoadFile())
+                ;
+
+            if (_networkIdTable.ContainsNetworkId(networkId))
+            {
+                return _networkRealId[networkId];
+            }
+            else
+                return null;
+        }
+
+        public int CountNetworkIds()
+        {
+            if (_isStreamLoaded)
+                return _networkRealId.Count;
+            else
+                return -1;
+        }
         public bool JumpToNetworkId(int networkId)
         {
             while (!_networkIdTable.ContainsNetworkId(networkId) && networkId > _networkIdTable.MaxNetworkId && TryLoadFile())
@@ -243,20 +256,6 @@ namespace Network.IO
             if (_networkIdTable.ContainsNetworkId(networkId))
             {
                 _curLine = _networkIdTable[networkId];
-                return true;
-            }
-
-            return false;
-        }
-        // Yushan
-        public bool JumpToNetworkIdAlt(string networkId)
-        {
-            while (!_networkIdTableAlt.ContainsNetworkId(networkId) && TryLoadFile())
-                ;
-
-            if (_networkIdTableAlt.ContainsNetworkId(networkId))
-            {
-                _curLine = _networkIdTableAlt[networkId];
                 return true;
             }
 
@@ -313,25 +312,6 @@ namespace Network.IO
 
             return stop - start;
         }
-        // Yushan
-        public int CountLinesAlt(string networkId)
-        {
-            if (!_networkIdTableAlt.ContainsNetworkId(networkId))
-                return -1; // This year doesn't exist
-
-            int start = _networkIdTableAlt[networkId];
-            int stop;
-            string nextNetworkId = _networkIdTableAlt.GetNextNetworkIdAlt(networkId);
-            while (nextNetworkId == "" && TryLoadFile())
-                ;
-
-            if (nextNetworkId == "")
-                stop = _lines.Count - 1;
-            else
-                stop = _networkIdTableAlt[nextNetworkId];
-
-            return stop - start;
-        }
 
         public Dictionary<string, int> GetDyadicLabels(int networkId)
         {
@@ -342,6 +322,9 @@ namespace Network.IO
                 throw new Exception("That year is not present in the file.");
 
             Dictionary<string, int> labels = new Dictionary<string, int>();
+            //Yushan
+            //Dictionary<string, int> rowLabels = new Dictionary<string, int>();
+            //Dictionary<string, int> colLabels = new Dictionary<string, int>();
 
             int prevLine = _curLine;
 
@@ -373,46 +356,6 @@ namespace Network.IO
             return labels;
         }
 
-        // Yushan
-        public Dictionary<string, int> GetDyadicLabelsAlt(string networkId)
-        {
-            if (_type != Type.Dyadic && _type != Type.Vector)
-                throw new Exception("Attempting to read dyadic labels from non-dyadic file!");
-
-            if (!_networkIdTableAlt.ContainsNetworkId(networkId))
-                throw new Exception("That network id is not present in the file.");
-
-            Dictionary<string, int> labels = new Dictionary<string, int>();
-
-            int prevLine = _curLine;
-
-            JumpToNetworkIdAlt(networkId);
-
-            int lineCount = CountLinesAlt(networkId);
-
-            for (int i = 0; i < lineCount; ++i)
-            {
-                string[] parts = ReadLine().Split(',');
-                if (_type == Type.Dyadic)
-                {
-                    if (!labels.ContainsKey(parts[2]))
-                        labels.Add(parts[2], i);
-                    else
-                        break;
-                }
-                else // Monadic file
-                {
-                    if (!labels.ContainsKey(parts[1]))
-                        labels.Add(parts[1], i);
-                    else
-                        break;
-                }
-            }
-
-            _curLine = prevLine;
-
-            return labels;
-        }
 
         public int CountVarsInDyadicFile()
         {
@@ -470,12 +413,14 @@ namespace Network.IO
 
         public int MinNetworkId
         {
-           get { return _networkIdTable.MinNetworkId; }
+           //get { return _networkIdTable.MinNetworkId; }
+           get { return 0; }
         }
 
         public int MaxNetworkId
         {
-            get { return _networkIdTable.MaxNetworkId; }
+            //get { return _networkIdTable.MaxNetworkId; }
+            get { return (_networkRealId.Count - 1); }
         }
 
         // need a member to get the top line of the file

@@ -131,12 +131,12 @@ namespace NetworkGUI
                 }
             }
         }
-        public MatrixTable loadFromInputFile(string inputFile, bool sign, bool selfTies)
+        public List<Matrix> loadFromInputFile(string inputFile, bool sign, bool selfTies)
         {
 
             string filename = inputFile;
             // List<Dictionary<string, int>> networkSpec = new List<Dictionary<string, int>>();
-            Dictionary<string, RandomNetwork> networkSpec = new Dictionary<string, RandomNetwork>();
+            List<RandomNetwork> networkSpec = new List<RandomNetwork>();
             // Unsigned should have 5 cols, while signed 6 cols
             var reader = new StreamReader(filename);
             var headers = reader.ReadLine().Split(',');
@@ -174,7 +174,7 @@ namespace NetworkGUI
                                 tempNetwork.Max = max_val;
                                 tempNetwork.Nodes = nodes;
 
-                                networkSpec.Add(net_ID, tempNetwork);
+                                networkSpec.Add(tempNetwork);
 
                             }
                             else if (string.Equals(net_ID, temp_ID) && temp_ID != "")
@@ -194,19 +194,19 @@ namespace NetworkGUI
                     }
                 }
                 NumNetID = networkSpec.Count;
-                foreach (KeyValuePair<string, RandomNetwork> kvp in networkSpec)
+                foreach (RandomNetwork randNet in networkSpec)
                 {
                     // Console.WriteLine("Nodes: " + kvp.Value.Nodes.ToString());
                     if (SelfTies)
                     {
-                        if ((Math.Ceiling((double)kvp.Value.PosEdg / ((kvp.Value.Max == 0) ? 1 : kvp.Value.Max)) + Math.Ceiling((double)kvp.Value.NegEdg / ((kvp.Value.Min == 0) ? 1 : Math.Abs(kvp.Value.Min)))) > (kvp.Value.Nodes * kvp.Value.Nodes - kvp.Value.Nodes))
+                        if ((Math.Ceiling((double)randNet.PosEdg / ((randNet.Max == 0) ? 1 : randNet.Max)) + Math.Ceiling((double)randNet.NegEdg / ((randNet.Min == 0) ? 1 : Math.Abs(randNet.Min)))) > (randNet.Nodes * randNet.Nodes - randNet.Nodes))
                         {
                             throw new Exception("Edges of this network is out of range!");
                         }
                     }
                     else
                     {
-                        if ((Math.Ceiling((double)kvp.Value.PosEdg / ((kvp.Value.Max == 0) ? 1 : kvp.Value.Max)) + Math.Ceiling((double)kvp.Value.NegEdg / ((kvp.Value.Min == 0) ? 1 : Math.Abs(kvp.Value.Min)))) > kvp.Value.Nodes * kvp.Value.Nodes)
+                        if ((Math.Ceiling((double)randNet.PosEdg / ((randNet.Max == 0) ? 1 : randNet.Max)) + Math.Ceiling((double)randNet.NegEdg / ((randNet.Min == 0) ? 1 : Math.Abs(randNet.Min)))) > randNet.Nodes * randNet.Nodes)
                         {
                             throw new Exception("Edges of this network is out of range!");
                         }
@@ -238,7 +238,7 @@ namespace NetworkGUI
                                 tempNetwork.Max = max_val;
                                 tempNetwork.Nodes = nodes;
 
-                                networkSpec.Add(net_ID, tempNetwork);
+                                networkSpec.Add(tempNetwork);
                             }
                             else if (string.Equals(net_ID, temp_ID) && temp_ID != "")
                             {
@@ -257,18 +257,18 @@ namespace NetworkGUI
                     }
                 }
                 NumNetID = networkSpec.Count;
-                foreach (KeyValuePair<string, RandomNetwork> kvp in networkSpec)
+                foreach (RandomNetwork randNet in networkSpec)
                 {
                     if (SelfTies)
                     {
-                        if ((Math.Ceiling((double)kvp.Value.Edge / ((kvp.Value.Max == 0) ? 1 : kvp.Value.Max))) > (kvp.Value.Nodes * kvp.Value.Nodes - kvp.Value.Nodes))
+                        if ((Math.Ceiling((double)randNet.Edge / ((randNet.Max == 0) ? 1 : randNet.Max))) > (randNet.Nodes * randNet.Nodes - randNet.Nodes))
                         {
                             throw new Exception("Edges of this network is out of range!");
                         }
                     }
                     else
                     {
-                        if ((Math.Ceiling((double)kvp.Value.Edge / ((kvp.Value.Max == 0) ? 1 : kvp.Value.Max))) > kvp.Value.Nodes * kvp.Value.Nodes)
+                        if ((Math.Ceiling((double)randNet.Edge / ((randNet.Max == 0) ? 1 : randNet.Max))) > randNet.Nodes * randNet.Nodes)
                         {
                             throw new Exception("Edges of this network is out of range!");
                         }
@@ -282,35 +282,38 @@ namespace NetworkGUI
             }
             reader.Close();
 
-            MatrixTable networkSpec_data = new MatrixTable();
-            foreach(KeyValuePair<string, RandomNetwork> kvp in networkSpec)
+            List<Matrix> networkSpec_data = new List<Matrix>();
+            int netId = 0;
+            foreach(RandomNetwork randNet in networkSpec)
             {
-                string s = kvp.Key;
+                string netIdStr = randNet.NetworkId;
                 int cols = sign ? 5 : 4;
-                networkSpec_data.AddMatrix(s, 1, cols);
-                networkSpec_data[s].Name = s;
+                Matrix tempMatrix = new Matrix(1, cols);
+                tempMatrix.NetworkId = netId++;
+                tempMatrix.NetworkIdStr = netIdStr;
                 if (sign)
                 {
                     string[] colLabels = { "Nodes", "Pos. Edges", "Neg. Edges", "Min", "Max" };
-                    networkSpec_data[s].ColLabels.SetLabels(colLabels);
+                    tempMatrix.ColLabels.SetLabels(colLabels);
 
-                    networkSpec_data[s][0, 0] = kvp.Value.Nodes;
-                    networkSpec_data[s][0, 1] = kvp.Value.PosEdg;
-                    networkSpec_data[s][0, 2] = kvp.Value.NegEdg;
-                    networkSpec_data[s][0, 3] = kvp.Value.Min;
-                    networkSpec_data[s][0, 4] = kvp.Value.Max;
+                    tempMatrix[0, 0] = randNet.Nodes;
+                    tempMatrix[0, 1] = randNet.PosEdg;
+                    tempMatrix[0, 2] = randNet.NegEdg;
+                    tempMatrix[0, 3] = randNet.Min;
+                    tempMatrix[0, 4] = randNet.Max;
 
                 }
                 else
                 {
                     string[] colLabels = { "Nodes", "Edges", "Min", "Max" };
-                    networkSpec_data[s].ColLabels.SetLabels(colLabels);
-                    networkSpec_data[s][0, 0] = kvp.Value.Nodes;
-                    networkSpec_data[s][0, 1] = kvp.Value.Edge;
-                    networkSpec_data[s][0, 2] = kvp.Value.Min;
-                    networkSpec_data[s][0, 3] = kvp.Value.Max;
+                    tempMatrix.ColLabels.SetLabels(colLabels);
+                    tempMatrix[0, 0] = randNet.Nodes;
+                    tempMatrix[0, 1] = randNet.Edge;
+                    tempMatrix[0, 2] = randNet.Min;
+                    tempMatrix[0, 3] = randNet.Max;
 
                 }
+                networkSpec_data.Add(tempMatrix);
             }
             return networkSpec_data;
         }

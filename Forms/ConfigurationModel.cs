@@ -135,14 +135,14 @@ namespace NetworkGUI
 
        
 
-        public MatrixTable loadFromInputFile(string inputFile, bool sign, bool selfTies)
+        public List<Matrix> loadFromInputFile(string inputFile, bool sign, bool selfTies)
         {
 
             string filename = inputFile;
-            // Dictionary<int, Dictionary<string, List<int>>> networkSpec = new Dictionary<int, Dictionary<string, List<int>>>();
             Dictionary<string, List<RandomNetwork>> networkSpec = new Dictionary<string, List<RandomNetwork>>();
+            List<string> orderedNetIds = new List<string>();
             // Unsigned should have 5 cols, while signed 6 cols
-                                                                                                                                                                                            var reader = new StreamReader(filename);
+            var reader = new StreamReader(filename);
             var headers = reader.ReadLine().Split(',');
             int num_items = headers.Length;
 
@@ -177,7 +177,7 @@ namespace NetworkGUI
                             {                               
                                 tempNetID = net_ID;
                                 networkSpec.Add(net_ID, new List<RandomNetwork>());
-
+                                orderedNetIds.Add(net_ID);
                                 tempNetwork.NetworkId = net_ID;
                                 tempNetwork.PosDeg = pos_degree;
                                 tempNetwork.NegDeg = neg_degree;
@@ -224,11 +224,11 @@ namespace NetworkGUI
                 NumNetID = networkSpec.Count;
                 nodes = new int[NumNetID];
                 int counter = 0;
-                foreach (KeyValuePair<string,List<RandomNetwork>> kvp in networkSpec)
+                foreach (string netId in orderedNetIds)
                 {
                     int temp_node = 0;
                     // int edges = 0;
-                    nodes[counter] = kvp.Value.Count;
+                    nodes[counter] = networkSpec[netId].Count;
                     temp_node = nodes[counter++];
                     // Constraints on degrees: Each node cannot have a degree larger than the total number of nodes
                     // degree (pos_degree + neg_degree) [i] < Sum(degree [i])
@@ -237,14 +237,14 @@ namespace NetworkGUI
                     {
                         for (i = 0; i < temp_node; i++)
                         {
-                            if (Math.Ceiling((double)kvp.Value[i].PosDeg / (kvp.Value[i].Max == 0 ? 1 : kvp.Value[i].Max)) + Math.Ceiling((double)kvp.Value[i].NegDeg / (kvp.Value[i].Min == 0 ? 1 : Math.Abs(kvp.Value[i].Min))) > temp_node)
+                            if (Math.Ceiling((double)networkSpec[netId][i].PosDeg / (networkSpec[netId][i].Max == 0 ? 1 : networkSpec[netId][i].Max)) + Math.Ceiling((double)networkSpec[netId][i].NegDeg / (networkSpec[netId][i].Min == 0 ? 1 : Math.Abs(networkSpec[netId][i].Min))) > temp_node)
                             {
                                 throw new Exception("Degree of the node in Network is out of range!");
                             }
 
                             //else
                             //{
-                            //    edges += kvp.Value["Pos. Degree"][i] + kvp.Value["Neg. Degree"][i];
+                            //    edges += networkSpec[netId]["Pos. Degree"][i] + networkSpec[netId]["Neg. Degree"][i];
                             //}
                         }
                     }
@@ -253,13 +253,13 @@ namespace NetworkGUI
                     {
                         for (i = 0; i < temp_node; i++)
                         {
-                            if (Math.Ceiling((double)kvp.Value[i].PosDeg / (kvp.Value[i].Max == 0 ? 1 : kvp.Value[i].Max)) + Math.Ceiling((double)kvp.Value[i].NegDeg / (kvp.Value[i].Min == 0 ? 1 : Math.Abs(kvp.Value[i].Min))) > (temp_node - 1))
+                            if (Math.Ceiling((double)networkSpec[netId][i].PosDeg / (networkSpec[netId][i].Max == 0 ? 1 : networkSpec[netId][i].Max)) + Math.Ceiling((double)networkSpec[netId][i].NegDeg / (networkSpec[netId][i].Min == 0 ? 1 : Math.Abs(networkSpec[netId][i].Min))) > (temp_node - 1))
                             {
                                 throw new Exception("Degree of the node in Network is out of range!");
                             }
                             //else
                             //{
-                            //    edges += kvp.Value["Pos. Degree"][i] + kvp.Value["Neg. Degree"][i];
+                            //    edges += networkSpec[netId]["Pos. Degree"][i] + networkSpec[netId]["Neg. Degree"][i];
                             //}
                         }
                     }
@@ -292,7 +292,7 @@ namespace NetworkGUI
                             {                               
                                 tempNetID = net_ID;                                
                                 networkSpec.Add(net_ID, new List<RandomNetwork>());
-
+                                orderedNetIds.Add(net_ID);
                                 tempNetwork.NetworkId = net_ID;
                                 tempNetwork.Degree = degree;
                                 tempNetwork.Min = min_val;
@@ -340,10 +340,10 @@ namespace NetworkGUI
                 NumNetID = networkSpec.Count;
                 nodes = new int[NumNetID];
                 int counter = 0;
-                foreach (KeyValuePair<string, List<RandomNetwork>> kvp in networkSpec)
+                foreach (string netId in orderedNetIds)
                 {
                     int temp_node = 0;                   
-                    nodes[counter] = kvp.Value.Count;
+                    nodes[counter] = networkSpec[netId].Count;
                     temp_node = nodes[counter++];
                     // Constraints on degrees: Each node cannot have a degree larger than the total number of nodes
                     // degree (pos_degree + neg_degree) [i] < Sum(degree [i])
@@ -351,7 +351,7 @@ namespace NetworkGUI
                     {
                         for (i = 0; i < temp_node; i++)
                         {
-                            if (kvp.Value[i].Degree > (kvp.Value[i].Max * temp_node))
+                            if (networkSpec[netId][i].Degree > (networkSpec[netId][i].Max * temp_node))
                             {
                                 throw new Exception("Degree of the node in Network is out of range!");
                             }
@@ -361,7 +361,7 @@ namespace NetworkGUI
                     {
                         for (i = 0; i < temp_node; i++)
                         {
-                            if (kvp.Value[i].Degree > (kvp.Value[i].Max * (temp_node - 1)))
+                            if (networkSpec[netId][i].Degree > (networkSpec[netId][i].Max * (temp_node - 1)))
                             {
                                 throw new Exception("Degree of the node in Network is out of range!");
                             }
@@ -375,50 +375,47 @@ namespace NetworkGUI
             }
             reader.Close();
 
-            // Create a Matrix Table to store the input data
-            MatrixTable networkSpec_data = new MatrixTable();
+            // Create a Matrix T to store the input data
+            List<Matrix> networkSpec_data = new List<Matrix>();
             i = 0;
-            foreach(KeyValuePair<string, List<RandomNetwork>> kvp in networkSpec)
+            foreach(string netId in orderedNetIds)
             {
-                string s = kvp.Key;
+                List<RandomNetwork> tempList = networkSpec[netId];
                 int cols = sign?4:3;
-                networkSpec_data.AddMatrix(s, nodes[i], cols);
-                networkSpec_data[s].NetworkIdStr = s;
-                // networkSpec_data[s].NetworkId = kvp.Key;
-                // Algorithms.Iota(networkSpec_data[s].RowLabels, 1);
+                Matrix m = new Matrix(nodes[i], cols, netId);
 
                 if(sign)
                 {
                     string[] rowLabels = new string[nodes[i]];
                     string[] colLabels = { "Pos. Degree", "Neg. Degree", "Min", "Max" };
-                    networkSpec_data[s].ColLabels.SetLabels(colLabels);
+                    m.ColLabels.SetLabels(colLabels);
                     for(int j = 0; j < nodes[i]; j++)
                     {
-                        rowLabels[j] = kvp.Value[j].Node;
-                        networkSpec_data[s][j, 0] = kvp.Value[j].PosDeg;
-                        networkSpec_data[s][j, 1] = kvp.Value[j].NegDeg;
-                        networkSpec_data[s][j, 2] = kvp.Value[j].Min;
-                        networkSpec_data[s][j, 3] = kvp.Value[j].Max;
+                        rowLabels[j] = tempList[j].Node;
+                        m[j, 0] = tempList[j].PosDeg;
+                        m[j, 1] = tempList[j].NegDeg;
+                        m[j, 2] = tempList[j].Min;
+                        m[j, 3] = tempList[j].Max;
                     }
-                    networkSpec_data[s].RowLabels.SetLabels(rowLabels);
+                    m.RowLabels.SetLabels(rowLabels);
                     i++;
                 }
                 else
                 {
                     string[] rowLabels = new string[nodes[i]];
                     string[] colLabels = { "Degree", "Min", "Max" };
-                    networkSpec_data[s].ColLabels.SetLabels(colLabels);
+                    m.ColLabels.SetLabels(colLabels);
                     for (int j = 0; j < nodes[i]; j++)
                     {
-                        rowLabels[j] = kvp.Value[j].Node;
-                        networkSpec_data[s][j, 0] = kvp.Value[j].Degree;
-                        networkSpec_data[s][j, 1] = kvp.Value[j].Min;
-                        networkSpec_data[s][j, 2] = kvp.Value[j].Max;
+                        rowLabels[j] = tempList[j].Node;
+                        m[j, 0] = tempList[j].Degree;
+                        m[j, 1] = tempList[j].Min;
+                        m[j, 2] = tempList[j].Max;
                     }
-                    networkSpec_data[s].RowLabels.SetLabels(rowLabels);
+                    m.RowLabels.SetLabels(rowLabels);
                     i++;
                 }
-
+                networkSpec_data.Add(m);
                 // Console.WriteLine("Network ID: " + networkSpec_data[s].Name + " Row: " + networkSpec_data[s].RowLabels);
 
 

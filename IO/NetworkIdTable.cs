@@ -22,8 +22,8 @@ namespace Network.IO
         public NetworkIdTable()
         {
             _table = new Dictionary<int, int>();
-            _minNetworkId = int.MinValue;
-            _maxNetworkId = int.MaxValue;
+            _minNetworkId = FindMinKey();
+            _maxNetworkId = FindMaxKey();
         }
 
         public int KeyCounts()
@@ -43,6 +43,16 @@ namespace Network.IO
             return max;
         }
 
+        public int FindMinKey()
+        {
+            // int max = _minNetworkId;
+            int min = 0;
+            foreach (KeyValuePair<int, int> kvp in _table)
+            {
+                if (kvp.Value < min) min = kvp.Value;
+            }
+            return min;
+        }
         public bool ContainsNetworkId(int networkId)
         {
             return _table.ContainsKey(networkId);
@@ -50,26 +60,20 @@ namespace Network.IO
 
         public int GetNextNetworkId(int networkId)
         {
-            if (networkId >= _maxNetworkId)
+            if (networkId >= _maxNetworkId || !ContainsNetworkId(++networkId))
                 return -1;
             if (networkId < _minNetworkId)
                 return _minNetworkId;
-
-            while (!ContainsNetworkId(++networkId))
-                ;
 
             return networkId;
         }
 
         public int GetPreviousNetworkId(int networkId)
         {
-            if (networkId <= _minNetworkId)
+            if (networkId <= _minNetworkId || !ContainsNetworkId(--networkId))
                 return -1;
             if (networkId > _maxNetworkId)
                 return _maxNetworkId;
-
-            while (!ContainsNetworkId(--networkId))
-                ;
 
             return networkId;
         }

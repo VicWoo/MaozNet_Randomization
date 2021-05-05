@@ -15,6 +15,15 @@ namespace Network.Matrices
 
             return this[name];
         }
+        public string[] GetOrderedNetworkIds()
+        {
+            string[] orderedNetIds = new string[this.Count];
+            foreach (KeyValuePair <string, Matrix> kvp in this)
+            {
+                orderedNetIds[kvp.Value.NetworkId] = kvp.Key;
+            }
+            return orderedNetIds;
+        }
 
     }
 }
