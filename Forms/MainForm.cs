@@ -54,7 +54,7 @@ namespace NetworkGUI
         bool _randomSymmetric = false;
 
         // Yushan
-        List<string> networkRealIdList = null;
+        List<string> networkRealIdList = new List<string>();
         // Global Randomization
         bool _globalDirected;
         bool selfTies;
@@ -710,9 +710,13 @@ namespace NetworkGUI
                 file = fileNames[fileNames.Length - 1];
             else
                 file = openFileDialog.FileName;
+            //this.Text = string.Concat("Matrix Manipulator v" + versionString + " - ",
+            //        file.Substring(file.LastIndexOf('\\') + 1),
+            //        " - ", currentYear.ToString());
+            // Yushan
             this.Text = string.Concat("Matrix Manipulator v" + versionString + " - ",
-                    file.Substring(file.LastIndexOf('\\') + 1),
-                    " - ", currentYear.ToString());
+        file.Substring(file.LastIndexOf('\\') + 1),
+        " - ", networkRealIdList[currentYear]);
             if (openFileDialog.Multiselect)
                 this.Text += " [Multiple Files]";
         }
@@ -966,6 +970,11 @@ namespace NetworkGUI
                     //startYear = currentYear = net.SmartLoad(openFileDialog.FileName, out loadFrom);
                     networkRealIdList = new List<string>();
                     startYear = currentYear = net.SmartLoad(openFileDialog.FileName, out loadFrom, out networkRealIdList);
+                    // Yushan
+                    for (int i = 0; i < networkRealIdList.Count; i++)
+                    {
+                        Console.WriteLine("network[{0:d}] real ID: {1:s}", i, networkRealIdList[i]);
+                    }
                     //loadFrom = "Matrix";
                     SetFormTitle();
 
@@ -1650,13 +1659,17 @@ namespace NetworkGUI
                 //        return;
                 //    }
                 //}
-                range.from = currentYear.ToString();
-                range.to = currentYear.ToString();
+                //range.from = currentYear.ToString();
+                //range.to = currentYear.ToString();
+                range.from = networkRealIdList[currentYear];
+                range.to = networkRealIdList[currentYear];
                 range.ShowDialog();
                 try
                 {
-                    startYear = int.Parse(range.from);
-                    endYear = int.Parse(range.to);
+                    //startYear = int.Parse(range.from);
+                    //endYear = int.Parse(range.to);
+                    startYear = networkRealIdList.IndexOf(range.from);
+                    endYear = networkRealIdList.IndexOf(range.to);
                     if (startYear > endYear)
                     {
                         MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -1878,13 +1891,17 @@ namespace NetworkGUI
                 }
                 else
                 {
-                    range.from = currentYear.ToString();
-                    range.to = currentYear.ToString();
+                    //range.from = currentYear.ToString();
+                    //range.to = currentYear.ToString();
+                    range.from = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[currentYear];
                     range.ShowDialog();
                     try
                     {
-                        startYear = int.Parse(range.from);
-                        endYear = int.Parse(range.to);
+                        //startYear = int.Parse(range.from);
+                        //endYear = int.Parse(range.to);
+                        startYear = networkRealIdList.IndexOf(range.from);
+                        endYear = networkRealIdList.IndexOf(range.to);
                         if (startYear > endYear)
                         {
                             MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -2037,9 +2054,14 @@ namespace NetworkGUI
                     SetMode(false);
                     networkRealIdList = new List<string>();
                     startYear = currentYear = net.SmartLoad(openFileDialog.FileName, out loadFrom, out networkRealIdList);
+                    // Yushan
+                    for (int i = 0; i < networkRealIdList.Count; i++)
+                    {
+                        Console.WriteLine("network[{0:d}] real ID: {1:s}", i, networkRealIdList[i]);
+                    }
                     //loadFrom = "Dyadic";
                     //loadFrom = type;
-                    
+
                     SetFormTitle();
                     if (displayMatrix == "Affil" || displayMatrix == "NetworkDependenceStatistics" || displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                         displayMatrix = "Data";
@@ -2093,13 +2115,17 @@ namespace NetworkGUI
                 }
                 else
                 {
-                    range.from = currentYear.ToString();
-                    range.to = currentYear.ToString();
+                    //range.from = currentYear.ToString();
+                    //range.to = currentYear.ToString();
+                    range.from = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[currentYear];
                     range.ShowDialog();
                     try
                     {
-                        startYear = int.Parse(range.from);
-                        endYear = int.Parse(range.to);
+                        //startYear = int.Parse(range.from);
+                        //endYear = int.Parse(range.to);
+                        startYear = networkRealIdList.IndexOf(range.from);
+                        endYear = networkRealIdList.IndexOf(range.to);
                         if (startYear > endYear)
                         {
                             MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -2266,13 +2292,17 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 }
                 else
                 {
-                    range.from = currentYear.ToString();
-                    range.to = currentYear.ToString();
+                    //range.from = currentYear.ToString();
+                    //range.to = currentYear.ToString();
+                    range.from = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[currentYear];
                     range.ShowDialog();
                     try
                     {
-                        startYear = int.Parse(range.from);
-                        endYear = int.Parse(range.to);
+                        //startYear = int.Parse(range.from);
+                        //endYear = int.Parse(range.to);
+                        startYear = networkRealIdList.IndexOf(range.from);
+                        endYear = networkRealIdList.IndexOf(range.to);
                         if (startYear > endYear)
                         {
                             MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -2364,6 +2394,13 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 MessageBox.Show("There was an error loading from multiple files: " + e.Message, "Error!");
             }
             loadFrom = "Matrix";
+            // Yushan TODO: figure out exactly how load multiple files work\
+            networkRealIdList = new List<string>();
+            networkRealIdList = BufferedFileTable.GetFile(fileNames[0]).NetworkRealIdList;
+            for (int i = 0; i < networkRealIdList.Count; i++)
+            {
+                Console.WriteLine("network[{0:d}] real ID: {1:s}", i, networkRealIdList[i]);
+            }
             SetFormTitle();
             if (displayMatrix == "Affil")
                 displayMatrix = "Data";
@@ -2415,6 +2452,13 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     fileNames = openFileDialog.FileNames;
                     useMultipleFiles = true;
                     currentYear = net.LoadFromMultivariableDyadicFile(fileNames[0], -1);
+                    // Yushan TODO: figure out exactly how load multiple files work\
+                    networkRealIdList = new List<string>();
+                    networkRealIdList = BufferedFileTable.GetFile(fileNames[0]).NetworkRealIdList;
+                    for (int i = 0; i < networkRealIdList.Count; i++)
+                    {
+                        Console.WriteLine("network[{0:d}] real ID: {1:s}", i, networkRealIdList[i]);
+                    }
                     SetFormTitle();
                     if (displayMatrix == "Affil")
                         displayMatrix = "Data";
@@ -2502,13 +2546,17 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             }
             else
             {
-                range.from = currentYear.ToString();
-                range.to = currentYear.ToString();
+                //range.from = currentYear.ToString();
+                //range.to = currentYear.ToString();
+                range.from = networkRealIdList[currentYear];
+                range.to = networkRealIdList[currentYear];
                 range.ShowDialog();
                 try
                 {
-                    startYear = int.Parse(range.from);
-                    endYear = int.Parse(range.to);
+                    //startYear = int.Parse(range.from);
+                    //endYear = int.Parse(range.to);
+                    startYear = networkRealIdList.IndexOf(range.from);
+                    endYear = networkRealIdList.IndexOf(range.to);
                     if (startYear > endYear)
                     {
                         MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -2596,13 +2644,17 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 }
                 else
                 {
-                    range.from = currentYear.ToString();
-                    range.to = currentYear.ToString();
+                    //range.from = currentYear.ToString();
+                    //range.to = currentYear.ToString();
+                    range.from = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[currentYear];
                     range.ShowDialog();
                     try
                     {
-                        startYear = int.Parse(range.from);
-                        endYear = int.Parse(range.to);
+                        //startYear = int.Parse(range.from);
+                        //endYear = int.Parse(range.to);
+                        startYear = networkRealIdList.IndexOf(range.from);
+                        endYear = networkRealIdList.IndexOf(range.to);
                         if (startYear > endYear)
                         {
                             MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -2728,6 +2780,13 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     loadFrom = "Affil";
                     SetMode(false);
                     startYear = currentYear = net.LoadFromAffiliationFile(openFileDialog.FileName, -1);
+                    // Yushan TODO: figure out exactly how affiliation file works
+                    networkRealIdList = new List<string>();
+                    networkRealIdList = BufferedFileTable.GetFile(openFileDialog.FileName).NetworkRealIdList;
+                    for (int i = 0; i < networkRealIdList.Count; i++)
+                    {
+                        Console.WriteLine("network[{0:d}] real ID: {1:s}", i, networkRealIdList[i]);
+                    }
                     SetFormTitle();
 
                     if (displayMatrix == "Data")
@@ -2758,6 +2817,13 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     SetMode(false);
                     startYear = currentYear = net.LoadFromMonadicFile(openFileDialog.FileName, -1);
                     loadFrom = "Monadic";
+                    // Yushan TODO: figure out exactly how it works
+                    networkRealIdList = new List<string>();
+                    networkRealIdList = BufferedFileTable.GetFile(openFileDialog.FileName).NetworkRealIdList;
+                    for (int i = 0; i < networkRealIdList.Count; i++)
+                    {
+                        Console.WriteLine("network[{0:d}] real ID: {1:s}", i, networkRealIdList[i]);
+                    }
                     SetFormTitle();
                     if (displayMatrix == "Affil")
                         displayMatrix = "Data";
@@ -2884,13 +2950,17 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 }
                 else
                 {
-                    range.from = currentYear.ToString();
-                    range.to = currentYear.ToString();
+                    //range.from = currentYear.ToString();
+                    //range.to = currentYear.ToString();
+                    range.from = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[currentYear];
                     range.ShowDialog();
                     try
                     {
-                        startYear = int.Parse(range.from);
-                        endYear = int.Parse(range.to);
+                        //startYear = int.Parse(range.from);
+                        //endYear = int.Parse(range.to);
+                        startYear = networkRealIdList.IndexOf(range.from);
+                        endYear = networkRealIdList.IndexOf(range.to);
                         if (startYear > endYear)
                         {
                             MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -3593,13 +3663,17 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 }
                 else
                 {
-                    range.from = currentYear.ToString();
-                    range.to = currentYear.ToString();
+                    //range.from = currentYear.ToString();
+                    //range.to = currentYear.ToString();
+                    range.from = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[currentYear];
                     range.ShowDialog();
                     try
                     {
-                        startYear = int.Parse(range.from);
-                        endYear = int.Parse(range.to);
+                        //startYear = int.Parse(range.from);
+                        //endYear = int.Parse(range.to);
+                        startYear = networkRealIdList.IndexOf(range.from);
+                        endYear = networkRealIdList.IndexOf(range.to);
                         if (startYear > endYear)
                         {
                             MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -3801,6 +3875,11 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     {
                         networkRealIdList = new List<string>();
                         net.SmartLoad(files[i].fileName, out Null, out networkRealIdList);
+                        // Yushan
+                        for (int k = 0; k < networkRealIdList.Count; k++)
+                        {
+                            Console.WriteLine("network[{0:d}] real ID: {1:s}", k, networkRealIdList[k]);
+                        }
                         net.cet = files[i].option;
                         temp = clique.convertClique(net.FindCliques(files[i].cutOff, false, 0.0, 0xFFFF, 0, false, _optionsForm.KCliqueValue, _optionsForm.KCliqueDiag));
                         net.merge(cliques, temp);
@@ -4661,13 +4740,17 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 }
                 else
                 {
-                    range.from = currentYear.ToString();
-                    range.to = currentYear.ToString();
+                    //range.from = currentYear.ToString();
+                    //range.to = currentYear.ToString();
+                    range.from = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[currentYear];
                     range.ShowDialog();
                     try
                     {
-                        startYear = int.Parse(range.from);
-                        endYear = int.Parse(range.to);
+                        //startYear = int.Parse(range.from);
+                        //endYear = int.Parse(range.to);
+                        startYear = networkRealIdList.IndexOf(range.from);
+                        endYear = networkRealIdList.IndexOf(range.to);
                         if (startYear > endYear)
                         {
                             MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
@@ -4772,13 +4855,17 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 }
                 else
                 {
-                    range.from = currentYear.ToString();
-                    range.to = currentYear.ToString();
+                    //range.from = currentYear.ToString();
+                    //range.to = currentYear.ToString();
+                    range.from = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[currentYear];
                     range.ShowDialog();
                     try
                     {
-                        startYear = int.Parse(range.from);
-                        endYear = int.Parse(range.to);
+                        //startYear = int.Parse(range.from);
+                        //endYear = int.Parse(range.to);
+                        startYear = networkRealIdList.IndexOf(range.from);
+                        endYear = networkRealIdList.IndexOf(range.to);
                         if (startYear > endYear)
                         {
                             MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
