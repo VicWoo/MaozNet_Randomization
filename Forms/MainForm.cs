@@ -338,6 +338,8 @@ namespace NetworkGUI
                 // new code for local Transitivity
                 case "LocalTransitivity":
                     break;
+                case "Triadic":
+                    break;
                 case "LocalBalance":
                     break;
 
@@ -472,7 +474,7 @@ namespace NetworkGUI
                     net.LoadBinaryComplement(displayMatrix);
                     break;
                 case "Triadic":
-                    net.LoadTriadic("Data", currentYear);
+                    net.LoadTriadic(dataGrid, currentYear);
                     break;
                 case "RoleEquiv":
                     if (!openFileDialog.Multiselect)

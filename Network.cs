@@ -3396,12 +3396,13 @@ namespace Network
                         mTable["ClosenessDistance"][i, j] = mTable["ClosenessDistance"][j, i];
         }
 
-        public void LoadTriadic(string m, int year)
+        public void CalcTriadic(string m, int year)
         {
             int n = mTable[m].Rows;
             int triadCount = n * (n - 1) * (n - 2) / 6;
-
             mTable["Triadic"] = new Matrix(triadCount, 20); // year, triad id, ab, ac, bc
+            mTable["Triadic"].NetworkId = year;
+            mTable["Triadic"].NetworkIdStr = mTable[m].NetworkIdStr;
             mTable["Triadic"].ColLabels[0] = "Year";
             mTable["Triadic"].ColLabels[1] = "Triad ID";
             mTable["Triadic"].ColLabels[2] = "A --> B";
@@ -3432,9 +3433,9 @@ namespace Network
                 {
                     for (int k = j + 1; k < n; ++k)
                     {
-                        //mTable["Triadic"][row, 0] = year;
+                        mTable["Triadic"][row, 0] = year;
                         // Yushan
-                        mTable["Triadic"][row, 0] = Int32.Parse(mTable[m].NetworkIdStr);
+                        //mTable["Triadic"][row, 0] = Int32.Parse(mTable[m].NetworkIdStr);
                         mTable["Triadic"][row, 1] = double.Parse((i + 1).ToString() + "," + (j + 1).ToString() + "," + (k + 1).ToString());
                         mTable["Triadic"][row, 2] = mTable[m][i, j] > 0 ? 1 : 0;
                         mTable["Triadic"][row, 3] = mTable[m][i, k] > 0 ? 1 : 0;
@@ -3459,6 +3460,33 @@ namespace Network
                 }
             }
             //return row;
+        }
+
+        // Yushan
+        public void LoadTriadic(DataGridView data, int year)
+        {
+            data.Columns.Clear();
+            CalcTriadic("Data", year);
+            string ms = "Triadic";
+            for (int i = 0; i < mTable[ms].Cols; ++i)
+                data.Columns.Add(mTable[ms].ColLabels[i], mTable[ms].ColLabels[i]);
+            for (int row = 0; row < mTable[ms].Rows; row++)
+            {
+                // Generate an array to hold this row
+                string[] newRow = new string[mTable[ms].Cols];
+                for (int col = 0; col < mTable[ms].Cols; col++)
+                {
+                    if (col == 0)
+                    {
+                        newRow[col] = mTable[ms].NetworkIdStr;
+                    }
+                    else
+                        newRow[col] = mTable[ms][row, col].ToString();
+                }
+                data.Rows.Add(newRow);
+                data.Rows[row].HeaderCell.Value = mTable[ms].RowLabels[row];
+            }
+
         }
 
         protected int GetRelationshipType(int i, int j, string m)
@@ -12776,7 +12804,7 @@ namespace Network
             for (int i = 0; i < labelParts.Length; ++i)
                 data.Columns.Add(labelParts[i], labelParts[i]);
 
-            LoadTriadic("Data", networkID);
+            CalcTriadic("Data", networkID);
 
             int triadCount = mTable["Triadic"].Rows;
             int nodes = mTable["Data"].Rows;
