@@ -148,6 +148,8 @@ namespace Network.IO
             }
 
             Matrix m = new Matrix(d.Count, d.Count);  //transpose matrix
+            m.NetworkId = netID;
+            m.NetworkIdStr = reader.GetNetworkRealId(netID);
 
 
             //calculation
@@ -168,6 +170,7 @@ namespace Network.IO
 
             Matrix m = new Matrix(reader.CountLines(networkId));
             m.NetworkId = networkId;
+            m.NetworkIdStr = reader.GetNetworkRealId(networkId);
             for (int i = 0; i < m.Rows; ++i)
             {
                 string s = reader.ReadLine();
@@ -185,6 +188,7 @@ namespace Network.IO
 
             Vector v = new Vector(reader.CountLines(networkId));
             v.NetworkId = networkId;
+            v.NetworkIdStr = reader.GetNetworkRealId(networkId);
             for (int i = 0; i < v.Size; ++i)
             {
                 string s = reader.ReadLine();

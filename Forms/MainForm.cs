@@ -54,6 +54,7 @@ namespace NetworkGUI
         bool _randomSymmetric = false;
 
         // Yushan
+        List<string> networkRealIdList = null;
         // Global Randomization
         bool _globalDirected;
         bool selfTies;
@@ -962,7 +963,9 @@ namespace NetworkGUI
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     SetMode(false);
-                    startYear = currentYear = net.SmartLoad(openFileDialog.FileName, out loadFrom);
+                    //startYear = currentYear = net.SmartLoad(openFileDialog.FileName, out loadFrom);
+                    networkRealIdList = new List<string>();
+                    startYear = currentYear = net.SmartLoad(openFileDialog.FileName, out loadFrom, out networkRealIdList);
                     //loadFrom = "Matrix";
                     SetFormTitle();
 
@@ -2026,15 +2029,14 @@ namespace NetworkGUI
         private void dyadicFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             openFileDialog.Multiselect = false;
-            string type;
 
             try
             {
                 if (openFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     SetMode(false);
-                    //                    Matrix m = MatrixReader.ReadMatrixFromFile(openFileDialog.FileName);
-                    startYear = currentYear = net.SmartLoad(openFileDialog.FileName, out loadFrom);//type);
+                    networkRealIdList = new List<string>();
+                    startYear = currentYear = net.SmartLoad(openFileDialog.FileName, out loadFrom, out networkRealIdList);
                     //loadFrom = "Dyadic";
                     //loadFrom = type;
                     
@@ -3797,7 +3799,8 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 {
                     for (int i = 0; i < files.Length; i++)
                     {
-                        net.SmartLoad(files[i].fileName, out Null);
+                        networkRealIdList = new List<string>();
+                        net.SmartLoad(files[i].fileName, out Null, out networkRealIdList);
                         net.cet = files[i].option;
                         temp = clique.convertClique(net.FindCliques(files[i].cutOff, false, 0.0, 0xFFFF, 0, false, _optionsForm.KCliqueValue, _optionsForm.KCliqueDiag));
                         net.merge(cliques, temp);

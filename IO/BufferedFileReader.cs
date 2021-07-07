@@ -423,6 +423,10 @@ namespace Network.IO
             get { return (_networkRealId.Count - 1); }
         }
 
+        public List<string> NetworkRealIdList
+        {
+            get { return _networkRealId; }
+        }
         // need a member to get the top line of the file
         public string TopLine
         {

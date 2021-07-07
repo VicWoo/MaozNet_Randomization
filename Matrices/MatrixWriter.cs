@@ -24,7 +24,9 @@ namespace Network.IO
             using (StreamWriter writer = new StreamWriter(filename, !overwrite))
             {
                 if (writeNetworkId)
-                    writer.WriteLine(m.NetworkId);
+                    //writer.WriteLine(m.NetworkId);
+                    // Yushan
+                    writer.WriteLine(m.NetworkIdStr);
 
                 if (writeColLabels)
                 {
@@ -79,7 +81,8 @@ namespace Network.IO
                 {
                     for (int j = 0; j < m.Cols; ++j)
                     {
-                        string line = m.NetworkId + "," + m.RowLabels[i].ToString() + ","; // modified
+                        //string line = m.NetworkId + "," + m.RowLabels[i].ToString() + ","; // modified
+                        string line = m.NetworkIdStr + "," + m.RowLabels[i].ToString() + ",";
                         line += m.RowLabels[j].ToString() + "," + m[i, j].ToString();
                         writer.WriteLine(line);
                     }
@@ -105,7 +108,8 @@ namespace Network.IO
             {
                 for (int i = 0; i < v.Size; ++i)
                 {
-                    writer.WriteLine("{0},{1},{2}", v.NetworkId, v.Labels[i], v[i]);
+                    //writer.WriteLine("{0},{1},{2}", v.NetworkId, v.Labels[i], v[i]);
+                    writer.WriteLine("{0},{1},{2}", v.NetworkIdStr, v.Labels[i], v[i]);
                 }
             }
         }
