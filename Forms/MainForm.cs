@@ -1622,7 +1622,7 @@ namespace NetworkGUI
                 //if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 //{
                 //    range.from = netID[currentYear];
-                //    range.to = netID[currentYear];
+                //    range.to = netID[netID.Count - 1];
                 //    range.ShowDialog();
                 //    try
                 //    {
@@ -1664,7 +1664,9 @@ namespace NetworkGUI
                 //range.from = currentYear.ToString();
                 //range.to = currentYear.ToString();
                 range.from = networkRealIdList[currentYear];
-                range.to = networkRealIdList[currentYear];
+                // Yushan
+                // Default to range to the last network id observation 
+                range.to = networkRealIdList[networkRealIdList.Count - 1];
                 range.ShowDialog();
                 try
                 {
@@ -1677,7 +1679,7 @@ namespace NetworkGUI
                         MessageBox.Show("The start network ID must appear before the end network ID in the input order!", "Error!");
                         return;
                     }
-                }
+                }                                                                                                                                                                                  
                 catch (Exception)
                 {
                     MessageBox.Show("The years entered are invalid!", "Error!");
@@ -1873,7 +1875,7 @@ namespace NetworkGUI
                 if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 {
                     range.from = netID[currentYear];
-                    range.to = netID[currentYear];
+                    range.to = netID[netID.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -1896,7 +1898,7 @@ namespace NetworkGUI
                     //range.from = currentYear.ToString();
                     //range.to = currentYear.ToString();
                     range.from = networkRealIdList[currentYear];
-                    range.to = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[networkRealIdList.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -2097,7 +2099,7 @@ namespace NetworkGUI
                 if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 {
                     range.from = netID[currentYear];
-                    range.to = netID[currentYear];
+                    range.to = netID[netID.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -2120,7 +2122,7 @@ namespace NetworkGUI
                     //range.from = currentYear.ToString();
                     //range.to = currentYear.ToString();
                     range.from = networkRealIdList[currentYear];
-                    range.to = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[networkRealIdList.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -2274,7 +2276,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 {
                     range.from = netID[currentYear];
-                    range.to = netID[currentYear];
+                    range.to = netID[netID.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -2297,7 +2299,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     //range.from = currentYear.ToString();
                     //range.to = currentYear.ToString();
                     range.from = networkRealIdList[currentYear];
-                    range.to = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[networkRealIdList.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -2374,8 +2376,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
 
         private void multipleFilesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            openFileDialog.Multiselect = true;
-            
+            openFileDialog.Multiselect = true;           
             MultipleFileForm fileForm = new MultipleFileForm(this);
             fileForm.Show();
         }
@@ -2528,7 +2529,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
             if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
             {
                 range.from = netID[currentYear];
-                range.to = netID[currentYear];
+                range.to = netID[netID.Count - 1];
                 range.ShowDialog();
                 try
                 {
@@ -2551,7 +2552,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 //range.from = currentYear.ToString();
                 //range.to = currentYear.ToString();
                 range.from = networkRealIdList[currentYear];
-                range.to = networkRealIdList[currentYear];
+                range.to = networkRealIdList[networkRealIdList.Count - 1];
                 range.ShowDialog();
                 try
                 {
@@ -2626,7 +2627,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 {
                     range.from = netID[currentYear];
-                    range.to = netID[currentYear];
+                    range.to = netID[netID.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -2649,7 +2650,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     //range.from = currentYear.ToString();
                     //range.to = currentYear.ToString();
                     range.from = networkRealIdList[currentYear];
-                    range.to = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[networkRealIdList.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -2932,7 +2933,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 {
                     range.from = netID[currentYear];
-                    range.to = netID[currentYear];
+                    range.to = netID[netID.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -2955,7 +2956,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     //range.from = currentYear.ToString();
                     //range.to = currentYear.ToString();
                     range.from = networkRealIdList[currentYear];
-                    range.to = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[networkRealIdList.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -3645,7 +3646,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 {
                     range.from = netID[currentYear];
-                    range.to = netID[currentYear];
+                    range.to = netID[netID.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -3668,7 +3669,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     //range.from = currentYear.ToString();
                     //range.to = currentYear.ToString();
                     range.from = networkRealIdList[currentYear];
-                    range.to = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[networkRealIdList.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -4722,7 +4723,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 {
                     range.from = netID[currentYear];
-                    range.to = netID[currentYear];
+                    range.to = netID[netID.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -4745,7 +4746,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     //range.from = currentYear.ToString();
                     //range.to = currentYear.ToString();
                     range.from = networkRealIdList[currentYear];
-                    range.to = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[networkRealIdList.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -4837,7 +4838,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                 if (displayMatrix == "GlobalRandom" || displayMatrix == "ConfigModel")
                 {
                     range.from = netID[currentYear];
-                    range.to = netID[currentYear];
+                    range.to = netID[netID.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -4860,7 +4861,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     //range.from = currentYear.ToString();
                     //range.to = currentYear.ToString();
                     range.from = networkRealIdList[currentYear];
-                    range.to = networkRealIdList[currentYear];
+                    range.to = networkRealIdList[networkRealIdList.Count - 1];
                     range.ShowDialog();
                     try
                     {
@@ -5002,7 +5003,7 @@ displayMatrix != "Characteristics" || year == startYear, _optionsForm.SaveOverwr
                     {
                         throw new Exception("Cannot save " + displayMatrix.ToString() + " matrix as a Table format");
                     }
-
+                    SetFormTitle();
                     net.SaveAsTableToFile(saveFileDialog.FileName, year == startYear, _optionsForm.SaveOverwrite && year == startYear, displayMatrix, communityType);
                 }
             }

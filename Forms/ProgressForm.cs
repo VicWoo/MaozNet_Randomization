@@ -27,7 +27,7 @@ namespace NetworkGUI
 
         private void UpdateLabel()
         {
-            yearSaveLabel.Text = "Saving year " + cur.ToString() + " from " + start.ToString()
+            yearSaveLabel.Text = "Saving network " + cur.ToString() + " from " + start.ToString()
                 + "-" + end.ToString();
 
             yearSaveLabel.Update();
