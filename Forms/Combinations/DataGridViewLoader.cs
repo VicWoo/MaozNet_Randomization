@@ -30,7 +30,14 @@ namespace Network.GUI
                 string[] newRow = new string[m.Cols];
 
                 for (int col = 0; col < m.Cols; ++col)
-                    newRow[col] = m[row, col].ToString();
+                {
+                    if (col == 0 && (string.Equals(m.ColLabels[0], "Year") || string.Equals(m.ColLabels[0], "Network ID")))
+                    {
+                        newRow[col] = m.NetworkIdStr;
+                    }
+                    else
+                        newRow[col] = m[row, col].ToString();
+                }
                 data.Rows.Add(newRow);
 
                 data.Rows[row].HeaderCell.Value = m.RowLabels[row];

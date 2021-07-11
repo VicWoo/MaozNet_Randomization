@@ -34,7 +34,7 @@ namespace Network.IO
                     // writer.WriteLine(m.ColLabels.ToString());
                     for (int j = 0; j < m.Cols; ++j)
                     {
-                        if (String.Equals(m.ColLabels[j], "Network ID")) { }
+                        if (String.Equals(m.ColLabels[j], "Network ID") || String.Equals(m.ColLabels[j], "Year")) {}
                         else
                         {
                             writer.Write(',');
@@ -49,7 +49,7 @@ namespace Network.IO
                     writer.Write(m.RowLabels[i]);
                     for (int j = 0; j < m.Cols; ++j)
                     {
-                        if (String.Equals(m.ColLabels[j], "Network ID")) ;
+                        if (String.Equals(m.ColLabels[j], "Network ID") || String.Equals(m.ColLabels[j], "Year")) ;
                         else
                         {
                             writer.Write(',');
